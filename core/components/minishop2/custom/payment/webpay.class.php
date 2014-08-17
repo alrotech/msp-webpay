@@ -130,7 +130,7 @@ class WebPay extends msPaymentHandler implements msPaymentInterface {
                 $transaction_id = $params['wsb_tid'];
                 $postdata = '*API=&API_XML_REQUEST='.urlencode('<?xml version="1.0" encoding="ISO-8859-1"?><wsb_api_request><command>get_transaction</command><authorization><username>'.$this->config['login'].'</username><password>'.md5($this->config['password']).'</password></authorization><fields><transaction_id>'.$transaction_id.'</transaction_id></fields></wsb_api_request>');
 
-                $curl = curl_init($this->config['panel_url']);
+                $curl = curl_init($this->config['gate_url']);
                 curl_setopt ($curl, CURLOPT_HEADER, 0);
                 curl_setopt ($curl, CURLOPT_POST, 1);
                 curl_setopt ($curl, CURLOPT_POSTFIELDS, $postdata);

@@ -15,16 +15,16 @@ $_lang['setting_ms2_payment_webpay_password'] = 'Пароль в системе 
 $_lang['setting_ms2_payment_webpay_password_desc'] = 'Логин, с которым вы входите в панель управления WebPay. Нужен для проверки платежа.';
 
 $_lang['setting_ms2_payment_webpay_checkout_url'] = 'Адрес для выполнения запросов';
-$_lang['setting_ms2_payment_webpay_checkout_url_desc'] = 'Адрес, куда будет отправляться пользователь для выполнения оплаты заказа. В зависимости от типа платежа (тестовый или реальный) нужно задавать разные адреса: 1 - тестовый <strong>https://secure.sandbox.webpay.by:8843</strong>; 2 - реальный <strong>https://secure.webpay.by</strong>';
+$_lang['setting_ms2_payment_webpay_checkout_url_desc'] = 'Адрес, куда будет отправляться пользователь для выполнения оплаты заказа.';
 
 $_lang['setting_ms2_payment_webpay_gate_url'] = 'Адрес для выполнения проверки платежа';
-$_lang['setting_ms2_payment_webpay_gate_url_desc'] = 'Адрес, куда будет отправляться запрос на проверку платежа. В зависимости от типа платежа (тестовый или реальный) нужно задавать разные адреса: 1 - тестовый <strong>https://sandbox.webpay.by</strong>; 2 - реальный <strong>https://billing.webpay.by</strong>';
+$_lang['setting_ms2_payment_webpay_gate_url_desc'] = 'Адрес, куда будет отправляться запрос на проверку платежа.';
 
 $_lang['setting_ms2_payment_webpay_version'] = 'Версия формы оплаты';
 $_lang['setting_ms2_payment_webpay_version_desc'] = 'Текущий номер версии = 2.';
 
 $_lang['setting_ms2_payment_webpay_developer_mode'] = 'Режим совершения тестовых платежей';
-$_lang['setting_ms2_payment_webpay_developer_mode_desc'] = 'При значении "Да", все запросы оплаты будут отправляться на тестовую среду обработки платежей WebPay. При включении данного режим настройки checkout_url и gate_url игнорируются.';
+$_lang['setting_ms2_payment_webpay_developer_mode_desc'] = 'При значении "Да", все запросы оплаты будут отправляться на тестовую среду обработки платежей WebPay. При включении данного режима настройки checkout_url и gate_url игнорируются.';
 
 $_lang['setting_ms2_payment_webpay_currency'] = 'Предлагаемая валюта платежа';
 $_lang['setting_ms2_payment_webpay_currency_desc'] = 'Пользователь может изменить ее в процессе оплаты. Буквенный трехзначный код валюты согласно ISO4271. Доступны варианты: BYR, USD, EUR, RUB. В режиме тестирования доступна только BYR.';

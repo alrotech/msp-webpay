@@ -31,7 +31,6 @@ $sources = array(
 ,'docs' => $root . 'docs/'
 );
 require_once MODX_CORE_PATH . 'model/modx/modx.class.php';
-//require_once $sources['build'] . '/includes/functions.php';
 
 $modx= new modX();
 $modx->initialize('mgr');
@@ -122,12 +121,10 @@ $builder->setPackageAttributes(
     array(
         'changelog' => file_get_contents($sources['docs'] . 'changelog.txt'),
         'license' => file_get_contents($sources['docs'] . 'license.txt'),
-        'readme' => file_get_contents($sources['docs'] . 'readme.txt')
-        /*
-        ,'setup-options' => array(
-            'source' => $sources['build'].'setup.options.php',
-        ),
-        */
+        'readme' => file_get_contents($sources['docs'] . 'readme.txt'),
+        'setup-options' => array(
+            'source' => $sources['build'] . 'setup.options.php'
+        )
     ));
 $modx->log(modX::LOG_LEVEL_INFO,'Added package attributes and setup options.');
 
