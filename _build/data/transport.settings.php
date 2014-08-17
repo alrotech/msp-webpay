@@ -10,51 +10,63 @@ $settings = array();
 $tmp = array(
     'store_id' => array(
         'xtype' => 'textfield',
-        'value' => ''
+        'value' => '',
+        'area' => 'ms2_payment_webpay'
     ),
     'secret_key' => array(
         'xtype' => 'textfield',
-        'value' => ''
+        'value' => '',
+        'area' => 'ms2_payment_webpay'
     ),
     'login' => array(
         'xtype' => 'textfield',
-        'value' => ''
+        'value' => '',
+        'area' => 'ms2_payment_webpay'
     ),
     'password' => array(
         'xtype' => 'textfield',
-        'value' => ''
+        'value' => '',
+        'area' => 'ms2_payment_webpay'
     ),
     'checkout_url' => array(
         'xtype' => 'textfield',
-        'value' => ''
+        'value' => 'https://secure.webpay.by',
+        'area' => 'ms2_payment_webpay'
     ),
     'gate_url' => array(
         'xtype' => 'textfield',
-        'value' => ''
+        'value' => 'https://billing.webpay.by',
+        'area' => 'ms2_payment_webpay'
     ),
     'version' => array(
         'xtype' => 'numberfield',
-        'value' => 2
+        'value' => 2,
+        'area' => 'ms2_payment_webpay'
     ),
     'developer_mode' => array(
-        'xtype' => 'numberfield',
-        'value' => 1
+        'xtype' => 'combo-boolean',
+        'value' => true,
+        'area' => 'ms2_payment_webpay'
     ),
     'language' => array(
         'xtype' => 'textfield',
-        'value' => 'russian'
+        'value' => 'russian',
+        'area' => 'ms2_payment_webpay'
     ),
     'currency' => array(
         'xtype' => 'textfield',
-        'value' => 'BYR'
+        'value' => 'BYR',
+        'area' => 'ms2_payment_webpay'
     ),
     'success_id' => array(
         'xtype' => 'numberfield',
         'value' => 0,
+        'area' => 'ms2_payment_webpay'
     ),
     'failure_id' => array(
         'xtype' => 'numberfield',
         'value' => 0,
+        'area' => 'ms2_payment_webpay'
     ),
 );
 
