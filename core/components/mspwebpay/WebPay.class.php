@@ -5,11 +5,39 @@
  * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
 
-if (!class_exists('msPaymentInterface')) {
-    require_once dirname(dirname(__DIR__)) . '/model/minishop2/mspaymenthandler.class.php';
+// runtime checks
+if (!class_exists('msPaymentHandler')) {
+    $path = dirname(dirname(dirname(__DIR__))) . '/minishop2/model/minishop2/mspaymenthandler.class.php';
+    if (is_readable($path)) {
+        require_once $path;
+    }
 }
 
-class WebPay extends msPaymentHandler implements msPaymentInterface {
+/**
+ * Class for handling requests to WebPay API
+ */
+class WebPay extends msPaymentHandler
+{
+    const PREFIX = 'ms2_payment_webpay';
+
+    const OPTION_STORE_ID = 'store_id';
+    const OPTION_SECRET_KEY = 'secret_key';
+    const OPTION_LOGIN = 'login';
+    const OPTION_PASSWORD = 'password';
+    const OPTION_CHECKOUT_URL = 'checkout_url';
+    const OPTION_GATE_URL = 'gate_url';
+    const OPTION_LANGUAGE = 'language';
+    const OPTION_VERSION = 'version';
+    const OPTION_COUNTRY = 'country';
+    const OPTION_CURRENCY = 'currency';
+    const OPTION_DEVELOPER_MODE = 'developer_mode';
+
+    const OPTION_SUCCESS_STATUS = 'success_status';
+    const OPTION_FAILURE_STATUS = 'failure_status';
+    const OPTION_SUCCESS_PAGE = 'success_page';
+    const OPTION_FAILURE_PAGE = 'failure_page';
+    const OPTION_UNPAID_PAGE = 'unpaid_page';
+
     public $config;
     public $modx;
 
