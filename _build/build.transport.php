@@ -116,8 +116,6 @@ if (isset($answer['message'])) {
 
 define('PKG_ENCODE_KEY', $answer['key']);
 
-print_r(PKG_ENCODE_KEY);
-
 $package = new xPDOTransport($xpdo, $signature, $directory);
 
 $xpdo->setPackage('modx', __DIR__ . '/vendor/modx/revolution/core/model/');
@@ -198,9 +196,7 @@ foreach ($sources['core'] as $file) {
     ];
 }
 
-array_push($resolvers,
-    ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php']
-);
+$resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php'];
 
 $package->put($category, [
     'vehicle_class' => EncryptedVehicle::class,
@@ -232,25 +228,6 @@ $package->put($category, [
     'resolve' => $resolvers,
     'validate' => $validators
 ]);
-
-
-
-/* @var msPayment $payment */
-//$payment= $modx->newObject('msPayment');
-//$payment->fromArray(
-//    array(
-//        'name' => 'WebPay',
-//        'active' => 0,
-//        'class' => 'WebPay'
-//    )
-//);
-/* create payment vehicle */
-//$attributes = array(
-//    xPDOTransport::UNIQUE_KEY => 'name',
-//    xPDOTransport::PRESERVE_KEYS => false,
-//    xPDOTransport::UPDATE_OBJECT => false
-//);
-//$vehicle = $builder->createVehicle($payment,$attributes);
 
 $package->setAttribute('changelog', file_get_contents($sources['docs'] . 'changelog.txt'));
 $package->setAttribute('license', file_get_contents($sources['docs'] . 'license.txt'));

@@ -5,7 +5,6 @@
  * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
 
-// runtime checks
 if (!class_exists('msPaymentHandler')) {
     $path = dirname(dirname(dirname(__DIR__))) . '/minishop2/model/minishop2/mspaymenthandler.class.php';
     if (is_readable($path)) {
@@ -38,25 +37,40 @@ class WebPay extends msPaymentHandler
     const OPTION_FAILURE_PAGE = 'failure_page';
     const OPTION_UNPAID_PAGE = 'unpaid_page';
 
-    public $config;
+    /** @var array */
+    public $config = [];
+
+    /** @var xPDO */
     public $modx;
 
-    function __construct(xPDOObject $object, $config = array()) {
-        $this->modx = & $object->xpdo;
+    /** @var miniShop2 */
+    public $ms2;
 
-        $siteUrl = $this->modx->getOption('site_url');
-        $assetsUrl = $this->modx->getOption('minishop2.assets_url', $config, $this->modx->getOption('assets_url').'components/minishop2/');
-        $paymentUrl = $siteUrl . substr($assetsUrl, 1) . 'payment/webpay.php';
+    /**
+     * @return xPDO
+     */
+    protected function getMODX()
+    {
+        return $this->modx;
+    }
 
+    /**
+     * WebPay constructor.
+     * @param xPDOObject $object
+     * @param array $config
+     */
+    function __construct(xPDOObject $object, $config = [])
+    {
+        parent::__construct($object, $config);
+        
         $this->config = array_merge(
             array(
                 'store_name' => $this->modx->getOption('site_name'),
-                'store_id' => $this->modx->getOption('ms2_payment_webpay_store_id'),
-                'secret' => $this->modx->getOption('ms2_payment_webpay_secret_key'),
-                'login' => $this->modx->getOption('ms2_payment_webpay_login'),
-                'password' => $this->modx->getOption('ms2_payment_webpay_password'),
+                'store_id' => $this->modx->getOption('ms2_payment_webpay_store_id', '473977949'),
+                'secret' => $this->modx->getOption('ms2_payment_webpay_secret_key', 'gsfdgwertrfgsfdgsfzdfgdsfgsdf'),
+                'login' => $this->modx->getOption('ms2_payment_webpay_login', 'modcasts'),
+                'password' => $this->modx->getOption('ms2_payment_webpay_password', '8uTrE96Fjh'),
 
-                'payment_url' => $paymentUrl,
                 'checkout_url' => $this->modx->getOption('ms2_payment_webpay_checkout_url'),
                 'gate_url' => $this->modx->getOption('ms2_payment_webpay_gate_url'),
 
@@ -71,19 +85,35 @@ class WebPay extends msPaymentHandler
             $config
         );
 
+        $this->config['payment_url'] = join('/', [
+            rtrim($this->getMODX()->getOption('site_url'), '/'),
+            ltrim($this->getMODX()->getOption('assets_url'), '/'),
+            'components/mspwebpay/webpay.php'
+        ]);
+
         if ($this->config['developer_mode']) {
-            $this->config['checkout_url'] = 'https://secure.sandbox.webpay.by:8843';
+            $this->config['checkout_url'] = 'https://securesandbox.webpay.by';
             $this->config['gate_url'] = 'https://sandbox.webpay.by';
         }
     }
 
-    public function send(msOrder $order) {
+    /**
+     * @param msOrder $order
+     * @return array|string
+     */
+    public function send(msOrder $order)
+    {
         $link = $this->getPaymentLink($order);
 
-        return $this->success('', array('redirect' => $link));
+        return $this->success('', ['redirect' => $link]);
     }
 
-    public function getPaymentLink(msOrder $order) {
+    /**
+     * @param msOrder $order
+     * @return string
+     */
+    public function getPaymentLink(msOrder $order)
+    {
         $id = $order->get('id');
         $cost = $order->get('cost');
 
@@ -94,11 +124,11 @@ class WebPay extends msPaymentHandler
         $address = $order->getOne('Address');
         $delivery = $order->getOne('Delivery');
 
-        $products = $this->modx->getCollection('msOrderProduct', array('order_id' => $id));
+        $products = $this->modx->getCollection('msOrderProduct', ['order_id' => $id]);
 
         $random = md5(substr(md5(time()), 5, 10));
 
-        $request = array(
+        $request = [
             '*scart' => '',
             'wsb_order_num' => $id,
             'wsb_storeid' => $this->config['store_id'],
@@ -121,39 +151,34 @@ class WebPay extends msPaymentHandler
             'wsb_phone' => $address->get('phone'),
             //,'wsb_icn' => '' // not required // special
             //,'wsb_card' => '' // not required // special
-        );
+        ];
 
         $i = 0;
+        /** @var msOrderProduct $product */
         foreach ($products as $product) {
             $request["wsb_invoice_item_name[$i]"] = $product->get('name');
             $request["wsb_invoice_item_quantity[$i]"] = $product->get('count');
             $request["wsb_invoice_item_price[$i]"] = $product->get('price');
             $i++;
         }
-        $signature = sha1(
-             $request['wsb_seed']
-            .$request['wsb_storeid']
-            .$request['wsb_order_num']
-            .$request['wsb_test']
-            .$request['wsb_currency_id']
-            .$request['wsb_total']
-            .$this->config['secret']
-        );
+        $signature = sha1($request['wsb_seed'] . $request['wsb_storeid'] . $request['wsb_order_num'] . $request['wsb_test'] . $request['wsb_currency_id'] . $request['wsb_total'] . $this->config['secret']);
         $request['wsb_signature'] = $signature;
 
-        $link = $this->config['payment_url']
-            .'?'
-            .http_build_query(
-                array(
-                    'action' => 'payment',
-                    'request' => json_encode($request)
-                )
-            );
+        $link = $this->config['payment_url'] . '?' . http_build_query([
+                'action' => 'payment',
+                'request' => json_encode($request),
+            ]);
 
         return $link;
     }
 
-    public function receive(msOrder $order, $params = array()) {
+    /**
+     * @param msOrder $order
+     * @param array $params
+     * @return array|string|void
+     */
+    public function receive(msOrder $order, $params = [])
+    {
         switch ($params['action']) {
             case 'success':
                 if (empty($params['wsb_tid'])) {
@@ -161,36 +186,25 @@ class WebPay extends msPaymentHandler
                 }
 
                 $transaction_id = $params['wsb_tid'];
-                $postdata = '*API=&API_XML_REQUEST='.urlencode('<?xml version="1.0" encoding="ISO-8859-1"?><wsb_api_request><command>get_transaction</command><authorization><username>'.$this->config['login'].'</username><password>'.md5($this->config['password']).'</password></authorization><fields><transaction_id>'.$transaction_id.'</transaction_id></fields></wsb_api_request>');
+                $postdata = '*API=&API_XML_REQUEST=' . urlencode('<?xml version="1.0" encoding="ISO-8859-1"?><wsb_api_request><command>get_transaction</command><authorization><username>' . $this->config['login'] . '</username><password>' . md5($this->config['password']) . '</password></authorization><fields><transaction_id>' . $transaction_id . '</transaction_id></fields></wsb_api_request>');
 
                 $curl = curl_init($this->config['gate_url']);
-                curl_setopt ($curl, CURLOPT_HEADER, 0);
-                curl_setopt ($curl, CURLOPT_POST, 1);
-                curl_setopt ($curl, CURLOPT_POSTFIELDS, $postdata);
-                curl_setopt ($curl, CURLOPT_SSL_VERIFYPEER, 0);
-                curl_setopt ($curl, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt ($curl, CURLOPT_SSL_VERIFYHOST, 0);
-                $response = curl_exec ($curl);
-                curl_close ($curl);
+                curl_setopt($curl, CURLOPT_HEADER, 0);
+                curl_setopt($curl, CURLOPT_POST, 1);
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $postdata);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 1);
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+                $response = curl_exec($curl);
+                curl_close($curl);
 
                 $xml = simplexml_load_string($response);
 
-                if ((string) $xml->status == 'success') {
-                    $fields = (array) $xml->fields;
+                if ((string)$xml->status === 'success') {
+                    $fields = (array)$xml->fields;
 
-                    $crc = md5(
-                         $fields['transaction_id']
-                        .$fields['batch_timestamp']
-                        .$fields['currency_id']
-                        .$fields['amount']
-                        .$fields['payment_method']
-                        .$fields['payment_type']
-                        .$fields['order_id']
-                        .$fields['rrn']
-                        .$this->config['secret']
-                    );
+                    $crc = md5($fields['transaction_id'] . $fields['batch_timestamp'] . $fields['currency_id'] . $fields['amount'] . $fields['payment_method'] . $fields['payment_type'] . $fields['order_id'] . $fields['rrn'] . $this->config['secret']);
 
-                    if ($crc == $fields['wsb_signature'] && in_array($fields['payment_type'], array(1,4))) {
+                    if ($crc === $fields['wsb_signature'] && in_array($fields['payment_type'], [1, 4], true)) {
                         $miniShop2 = $this->modx->getService('miniShop2');
                         @$this->modx->context->key = 'mgr';
                         $miniShop2->changeOrderStatus($order->get('id'), 2);
@@ -202,19 +216,8 @@ class WebPay extends msPaymentHandler
                 }
                 break;
             case 'notify':
-                $crc = md5(
-                     $params['batch_timestamp']
-                    .$params['currency_id']
-                    .$params['amount']
-                    .$params['payment_method']
-                    .$params['order_id']
-                    .$params['site_order_id']
-                    .$params['transaction_id']
-                    .$params['payment_type']
-                    .$params['rrn']
-                    .$this->config['secret']
-                );
-                if ($crc == $params['wsb_signature'] && in_array($params['payment_type'], array(1,4))) {
+                $crc = md5($params['batch_timestamp'] . $params['currency_id'] . $params['amount'] . $params['payment_method'] . $params['order_id'] . $params['site_order_id'] . $params['transaction_id'] . $params['payment_type'] . $params['rrn'] . $this->config['secret']);
+                if ($crc === $params['wsb_signature'] && in_array($params['payment_type'], [1, 4], true)) {
                     $miniShop2 = $this->modx->getService('miniShop2');
                     @$this->modx->context->key = 'mgr';
                     $miniShop2->changeOrderStatus($order->get('id'), 2);
@@ -232,8 +235,13 @@ class WebPay extends msPaymentHandler
         }
     }
 
-    public function paymentError($text, $request = array()) {
-        $this->modx->log(modX::LOG_LEVEL_ERROR,'[miniShop2:WebPay] ' . $text . ', request: ' . print_r($request, 1));
+    /**
+     * @param $text
+     * @param array $request
+     */
+    public function paymentError($text, $request = [])
+    {
+        $this->modx->log(modX::LOG_LEVEL_ERROR, '[miniShop2:WebPay] ' . $text . ', request: ' . print_r($request, 1));
         header("HTTP/1.0 400 Bad Request");
 
         die('ERROR: ' . $text);

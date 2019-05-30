@@ -6,7 +6,7 @@
  */
 
 define('MODX_API_MODE', true);
-require dirname(dirname(dirname(dirname(__DIR__)))) . '/index.php';
+require dirname(dirname(dirname(__DIR__))) . '/index.php';
 
 $modx->getService('error', 'error.modError');
 $modx->setLogLevel(modX::LOG_LEVEL_ERROR);
