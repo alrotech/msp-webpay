@@ -1,7 +1,12 @@
 <?php
+/**
+ * Copyright (c) Ivan Klimchuk - All Rights Reserved
+ * Unauthorized copying, changing, distributing this file, via any medium, is strictly prohibited.
+ * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
+ */
 
 if (!class_exists('msPaymentInterface')) {
-    require_once dirname(dirname(dirname(__FILE__))) . '/model/minishop2/mspaymenthandler.class.php';
+    require_once dirname(dirname(__DIR__)) . '/model/minishop2/mspaymenthandler.class.php';
 }
 
 class WebPay extends msPaymentHandler implements msPaymentInterface {

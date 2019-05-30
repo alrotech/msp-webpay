@@ -1,6 +1,7 @@
 This file shows the changes in recent releases of mspWebPay.
 
 mspWebPay 2.0.0-pl (?, 2019)
+- The internal structure adapted to the new way of including services for miniShop2
 - The license now proprietary, all right reserved to the author - Ivan Klimchuk
 - Updated readme files to a common format for all author's extras
 
