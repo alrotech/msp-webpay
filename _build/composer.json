@@ -1,0 +1,17 @@
+{
+  "name": "alroniks/mspwebpay",
+  "description": "Payment provider for MODX miniShop2 e-commerce solutions based on WebPay system.",
+  "type": "library",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Ivan Klimchuk",
+      "email": "ivan@klimchuk.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require-dev": {
+    "modx/revolution": "~2.0"
+  }
+}

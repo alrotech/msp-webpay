@@ -1,2 +1,9 @@
 .idea
 .D_Store
+.encryption
+
+_packages/*/
+_packages/*.zip
+!_packages/.gitkeep
+
+vendor
