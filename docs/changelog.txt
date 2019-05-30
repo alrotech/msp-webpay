@@ -1,5 +1,7 @@
-Changelog for mspWebPay.
+This file shows the changes in recent releases of mspWebPay.
 
-1.0.0 beta
-==============
+mspWebPay 2.0.0-pl (?, 2019)
+- Updated readme files to common format for all author's extras
+
+mspWebPay 1.0.0-beta (undefined)
 - Initial release.
