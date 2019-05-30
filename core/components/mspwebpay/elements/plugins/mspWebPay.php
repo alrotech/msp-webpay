@@ -27,14 +27,12 @@ switch ($modx->event->name) {
             case 'system/settings':
                 loadExtraJs($modx, [
                     'language.combo.js',
-                    'country.combo.js',
                     'status.combo.js',
                     'resource.combo.js'
                 ]); break;
             case 'mgr/settings':
                 loadExtraJs($modx, [
                     'language.combo.js',
-                    'country.combo.js',
                     'status.combo.js',
                     'resource.combo.js',
                     'settings.combo.js',

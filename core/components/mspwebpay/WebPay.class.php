@@ -27,7 +27,6 @@ class WebPay extends msPaymentHandler
     const OPTION_GATE_URL = 'gate_url';
     const OPTION_LANGUAGE = 'language';
     const OPTION_VERSION = 'version';
-    const OPTION_COUNTRY = 'country';
     const OPTION_CURRENCY = 'currency';
     const OPTION_DEVELOPER_MODE = 'developer_mode';
 
