@@ -33,8 +33,6 @@ class EncryptedVehicle extends xPDOObjectVehicle
                 $this->payload['related_objects_encrypted'] = $this->encode($this->payload['related_objects'], PKG_ENCODE_KEY);
                 unset($this->payload['related_objects']);
             }
-
-            $transport->xpdo->log(xPDO::LOG_LEVEL_INFO, 'Package encrypted!');
         }
     }
 

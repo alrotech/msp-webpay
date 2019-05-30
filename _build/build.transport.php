@@ -18,7 +18,6 @@ define('PKG_SUPPORTS_PHP', '7.1');
 define('PKG_SUPPORTS_MODX', '2.7');
 define('PKG_SUPPORTS_MS2', '2.4');
 
-
 require_once __DIR__ . '/vendor/modx/revolution/core/xpdo/xpdo.class.php';
 
 /* instantiate xpdo instance */
@@ -72,8 +71,52 @@ if (file_exists($directory . $signature) && is_dir($directory . $signature)) {
 
 $xpdo->loadClass('transport.xPDOTransport', XPDO_CORE_PATH, true, true);
 $xpdo->loadClass('transport.xPDOVehicle', XPDO_CORE_PATH, true, true);
+$xpdo->loadClass('transport.xPDOObjectVehicle', XPDO_CORE_PATH, true, true);
 $xpdo->loadClass('transport.xPDOFileVehicle', XPDO_CORE_PATH, true, true);
 $xpdo->loadClass('transport.xPDOScriptVehicle', XPDO_CORE_PATH, true, true);
+
+require_once __DIR__ . '/helpers/ArrayXMLConverter.php';
+require_once __DIR__ . '/implants/encryptedvehicle.class.php';
+
+$credentials = file_get_contents(__DIR__ . '/../.encryption');
+list($username, $key) = explode(':', $credentials);
+
+if (empty($username) || empty($key)) {
+    $xpdo->log(xPDO::LOG_LEVEL_ERROR, 'Credentials not found');
+    exit;
+}
+
+$params = [
+    'api_key' => $key,
+    'username' => $username,
+    'http_host' => 'anysite.docker',
+    'package' => PKG_NAME,
+    'version' => PKG_VERSION . '-' . PKG_RELEASE,
+    'vehicle_version' => '2.0.0'
+];
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, 'https://modstore.pro/extras/package/encode');
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+curl_setopt($ch, CURLOPT_POSTFIELDS, ArrayXMLConverter::toXML($params,'request'));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+$result = trim(curl_exec($ch));
+curl_close($ch);
+
+$answer = ArrayXMLConverter::toArray($result);
+
+if (isset($answer['message'])) {
+    $xpdo->log(xPDO::LOG_LEVEL_ERROR, $answer['message']);
+    echo $answer['message'];
+    exit;
+}
+
+define('PKG_ENCODE_KEY', $answer['key']);
+
+print_r(PKG_ENCODE_KEY);
 
 $package = new xPDOTransport($xpdo, $signature, $directory);
 
@@ -85,22 +128,14 @@ $xpdo->loadClass(modPrincipal::class);
 $xpdo->loadClass(modElement::class);
 $xpdo->loadClass(modScript::class);
 
-//// insert class EncryptedVehicle
-//$package->put(new xPDOFileVehicle, [
-//    'vehicle_class' => xPDOFileVehicle::class,
-//    'object' => [
-//        'source' => $sources['implants'] . 'encryptedvehicle.class.php',
-//        'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME_LOWER . "/';"
-//    ]
-//]);
-//
-//// load class EncryptedVehicle
-//$package->put(new xPDOScriptVehicle, [
-//    'vehicle_class' => xPDOFileVehicle::class,
-//    'object' => [
-//        'source' => $sources['resolvers'] . 'resolve.encryption.php'
-//    ]
-//]);
+$package->put([
+    'source' => $sources['implants'] . 'encryptedvehicle.class.php',
+    'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME_LOWER . "/';",
+], ['vehicle_class' => xPDOFileVehicle::class]);
+
+$package->put([
+    'source' => $sources['resolvers'] . 'resolve.encryption.php'
+], ['vehicle_class' => xPDOScriptVehicle::class]);
 
 $namespace = $xpdo->newObject(modNamespace::class);
 $namespace->fromArray([
@@ -110,7 +145,7 @@ $namespace->fromArray([
 ]);
 
 $package->put($namespace, [
-//    'vehicle_class' => EncryptedVehicle::class,
+    'vehicle_class' => EncryptedVehicle::class,
     xPDOTransport::UNIQUE_KEY => 'name',
     xPDOTransport::PRESERVE_KEYS => true,
     xPDOTransport::UPDATE_OBJECT => true,
@@ -121,7 +156,7 @@ $package->put($namespace, [
 $settings = include $sources['data'] . 'transport.settings.php';
 foreach ($settings as $setting) {
     $package->put($setting, [
-//        'vehicle_class' => EncryptedVehicle::class,
+        'vehicle_class' => EncryptedVehicle::class,
         xPDOTransport::UNIQUE_KEY => 'key',
         xPDOTransport::PRESERVE_KEYS => true,
         xPDOTransport::UPDATE_OBJECT => true,
@@ -164,12 +199,11 @@ foreach ($sources['core'] as $file) {
 }
 
 array_push($resolvers,
-//    ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.settings.php'],
     ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php']
 );
 
 $package->put($category, [
-//    'vehicle_class' => EncryptedVehicle::class,
+    'vehicle_class' => EncryptedVehicle::class,
     xPDOTransport::UNIQUE_KEY => 'category',
     xPDOTransport::PRESERVE_KEYS => false,
     xPDOTransport::UPDATE_OBJECT => true,
@@ -221,10 +255,6 @@ $package->put($category, [
 $package->setAttribute('changelog', file_get_contents($sources['docs'] . 'changelog.txt'));
 $package->setAttribute('license', file_get_contents($sources['docs'] . 'license.txt'));
 $package->setAttribute('readme', file_get_contents($sources['docs'] . 'readme.txt'));
-//'setup-options' => array(
-//    'source' => $sources['build'] . 'setup.options.php'
-//)
-
 $package->setAttribute('requires', [
     'php' => '>=' . PKG_SUPPORTS_PHP,
     'modx' => '>=' . PKG_SUPPORTS_MODX,
