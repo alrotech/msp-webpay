@@ -1,6 +1,8 @@
 This file shows the changes in recent releases of mspWebPay.
 
-mspWebPay 2.0.0-pl (?, 2019)
+mspWebPay 2.1.0-pl (?, 2019)
+
+mspWebPay 2.0.0-pl (?, 2019) - set date of prev commit
 - Was set encryption for package
 - Component and builder were refactored for the usage of modx and xpdo those now are fetched by composer
 - The internal structure adapted to the new way of including services for miniShop2

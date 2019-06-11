@@ -13,17 +13,20 @@ $list = [
     WebPay::OPTION_SECRET_KEY   => ['xtype' => 'textfield', 'value' => ''],
     WebPay::OPTION_LOGIN        => ['xtype' => 'textfield', 'value' => ''],
     WebPay::OPTION_PASSWORD     => ['xtype' => 'textfield', 'value' => ''],
-    WebPay::OPTION_CHECKOUT_URL => ['xtype' => 'textfield', 'value' => 'https://secure.webpay.by'],
+    WebPay::OPTION_CHECKOUT_URL => ['xtype' => 'textfield', 'value' => 'https://payment.webpay.by'],
     WebPay::OPTION_GATE_URL     => ['xtype' => 'textfield', 'value' => 'https://billing.webpay.by'],
     WebPay::OPTION_VERSION      => ['xtype' => 'numberfield', 'value' => 2],
-    WebPay::OPTION_LANGUAGE     => ['xtype' => 'textfield', 'value' => 'russian'],
-    WebPay::OPTION_CURRENCY     => ['xtype' => 'textfield', 'value' => 'BYR'],
+    WebPay::OPTION_LANGUAGE     => ['xtype' => 'textfield', 'value' => 'russian'], // todo: replace by onw combo via plugin
+    WebPay::OPTION_CURRENCY     => ['xtype' => 'textfield', 'value' => 'BYR'], // todo: replace by onw combo via plugin
+    WebPay::OPTION_SUCCESS_STATUS   => ['xtype' => 'mspp-combo-status', 'value' => 2],
+    WebPay::OPTION_FAILURE_STATUS   => ['xtype' => 'mspp-combo-status', 'value' => 4],
+    WebPay::OPTION_SUCCESS_PAGE     => ['xtype' => 'mspp-combo-resource', 'value' => 0],
+    WebPay::OPTION_FAILURE_PAGE     => ['xtype' => 'mspp-combo-resource', 'value' => 0],
+    WebPay::OPTION_UNPAID_PAGE      => ['xtype' => 'mspp-combo-resource', 'value' => 0],
+
     WebPay::OPTION_DEVELOPER_MODE   => ['xtype' => 'combo-boolean', 'value' => true],
-    WebPay::OPTION_SUCCESS_STATUS   => ['xtype' => 'webpay-combo-status', 'value' => 2],
-    WebPay::OPTION_FAILURE_STATUS   => ['xtype' => 'webpay-combo-status', 'value' => 4],
-    WebPay::OPTION_SUCCESS_PAGE     => ['xtype' => 'webpay-combo-resource', 'value' => 0],
-    WebPay::OPTION_FAILURE_PAGE     => ['xtype' => 'webpay-combo-resource', 'value' => 0],
-    WebPay::OPTION_UNPAID_PAGE      => ['xtype' => 'webpay-combo-resource', 'value' => 0]
+    WebPay::OPTION_CHECKOUT_URL_TEST => ['xtype' => 'textfield', 'value' => 'https://securesandbox.webpay.by'],
+    WebPay::OPTION_GATE_URL_TEST     => ['xtype' => 'textfield', 'value' => 'https://sandbox.webpay.by'],
 ];
 
 $settings = [];

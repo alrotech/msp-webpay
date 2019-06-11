@@ -12,7 +12,7 @@ ini_set('date.timezone', 'Europe/Minsk');
 
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
-define('PKG_VERSION', '2.0.0');
+define('PKG_VERSION', '2.1.0');
 define('PKG_RELEASE', 'pl');
 define('PKG_SUPPORTS_PHP', '7.1');
 define('PKG_SUPPORTS_MODX', '2.7');
@@ -48,7 +48,7 @@ $sources = [
     ],
 ];
 
-$signature = implode('-', [PKG_NAME_LOWER, PKG_VERSION, PKG_RELEASE]);
+$signature = implode('-', [PKG_NAME, PKG_VERSION, PKG_RELEASE]);
 
 $release = false;
 if (!empty($argv) && $argc > 1) {
@@ -79,7 +79,7 @@ require_once __DIR__ . '/helpers/ArrayXMLConverter.php';
 require_once __DIR__ . '/implants/encryptedvehicle.class.php';
 
 $credentials = file_get_contents(__DIR__ . '/../.encryption');
-list($username, $key) = explode(':', $credentials);
+[$username, $key] = explode(':', $credentials);
 
 if (empty($username) || empty($key)) {
     $xpdo->log(xPDO::LOG_LEVEL_ERROR, 'Credentials not found');
@@ -166,10 +166,10 @@ foreach ($settings as $setting) {
 $category = $xpdo->newObject(modCategory::class);
 $category->fromArray(['id' => 1, 'category' => PKG_NAME, 'parent' => 0]);
 
-$plugins = include $sources['data'] . 'transport.plugins.php';
-if (is_array($plugins)) {
-    $category->addMany($plugins, 'Plugins');
-}
+//$plugins = include $sources['data'] . 'transport.plugins.php';
+//if (is_array($plugins)) {
+//    $category->addMany($plugins, 'Plugins');
+//}
 
 $validators = [];
 array_push($validators,
@@ -198,31 +198,15 @@ foreach ($sources['core'] as $file) {
 
 $resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php'];
 
+
+// todo: remove category and replace by file resolvers (in future probably it will be possible to encrypt files too);
 $package->put($category, [
     'vehicle_class' => EncryptedVehicle::class,
     xPDOTransport::UNIQUE_KEY => 'category',
     xPDOTransport::PRESERVE_KEYS => false,
     xPDOTransport::UPDATE_OBJECT => true,
     xPDOTransport::ABORT_INSTALL_ON_VEHICLE_FAIL => true,
-    xPDOTransport::RELATED_OBJECTS => true,
-    xPDOTransport::RELATED_OBJECT_ATTRIBUTES => [
-        'Plugins' => [
-            xPDOTransport::UNIQUE_KEY => 'name',
-            xPDOTransport::PRESERVE_KEYS => false,
-            xPDOTransport::UPDATE_OBJECT => true,
-            xPDOTransport::UNINSTALL_OBJECT => true,
-            xPDOTransport::RELATED_OBJECTS => true,
-            xPDOTransport::RELATED_OBJECT_ATTRIBUTES => [
-                'PluginEvents' => [
-                    xPDOTransport::UNIQUE_KEY => ['pluginid', 'event'],
-                    xPDOTransport::PRESERVE_KEYS => true,
-                    xPDOTransport::UPDATE_OBJECT => true,
-                    xPDOTransport::UNINSTALL_OBJECT => true,
-                    xPDOTransport::RELATED_OBJECTS => false
-                ]
-            ]
-        ]
-    ],
+    xPDOTransport::RELATED_OBJECTS => false,
     xPDOTransport::NATIVE_KEY => true,
     'package' => 'modx',
     'resolve' => $resolvers,
@@ -235,7 +219,8 @@ $package->setAttribute('readme', file_get_contents($sources['docs'] . 'readme.tx
 $package->setAttribute('requires', [
     'php' => '>=' . PKG_SUPPORTS_PHP,
     'modx' => '>=' . PKG_SUPPORTS_MODX,
-    'miniShop2' => '>=' . PKG_SUPPORTS_MS2
+    'miniShop2' => '>=' . PKG_SUPPORTS_MS2,
+    'msPaymentProps' => '*'
 ]);
 
 if ($package->pack()) {

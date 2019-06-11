@@ -5,8 +5,8 @@
  * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
 
-if (!class_exists('msPaymentHandler')) {
-    $path = dirname(dirname(dirname(__DIR__))) . '/minishop2/model/minishop2/mspaymenthandler.class.php';
+if (!class_exists('ConfigurablePaymentHandler')) {
+    $path = dirname(__DIR__, 3) . '/mspaymentproperties/ConfigurablePaymentHandler.class.php';
     if (is_readable($path)) {
         require_once $path;
     }
@@ -15,42 +15,37 @@ if (!class_exists('msPaymentHandler')) {
 /**
  * Class for handling requests to WebPay API
  */
-class WebPay extends msPaymentHandler
+class WebPay extends ConfigurablePaymentHandler
 {
-    const PREFIX = 'ms2_payment_webpay';
+    public const PREFIX = 'ms2_payment_';
 
-    const OPTION_STORE_ID = 'store_id';
-    const OPTION_SECRET_KEY = 'secret_key';
-    const OPTION_LOGIN = 'login';
-    const OPTION_PASSWORD = 'password';
-    const OPTION_CHECKOUT_URL = 'checkout_url';
-    const OPTION_GATE_URL = 'gate_url';
-    const OPTION_LANGUAGE = 'language';
-    const OPTION_VERSION = 'version';
-    const OPTION_CURRENCY = 'currency';
-    const OPTION_DEVELOPER_MODE = 'developer_mode';
+    public const OPTION_STORE_NAME = 'store_name';
+    public const OPTION_STORE_ID = 'store_id';
+    public const OPTION_SECRET_KEY = 'secret_key';
+    public const OPTION_LOGIN = 'login';
+    public const OPTION_PASSWORD = 'password';
+    public const OPTION_CHECKOUT_URL = 'checkout_url';
+    public const OPTION_GATE_URL = 'gate_url';
+    public const OPTION_LANGUAGE = 'language';
+    public const OPTION_VERSION = 'version';
+    public const OPTION_CURRENCY = 'currency';
 
-    const OPTION_SUCCESS_STATUS = 'success_status';
-    const OPTION_FAILURE_STATUS = 'failure_status';
-    const OPTION_SUCCESS_PAGE = 'success_page';
-    const OPTION_FAILURE_PAGE = 'failure_page';
-    const OPTION_UNPAID_PAGE = 'unpaid_page';
+    public const OPTION_DEVELOPER_MODE = 'developer_mode';
+    public const OPTION_CHECKOUT_URL_TEST = 'checkout_url_test';
+    public const OPTION_GATE_URL_TEST = 'gate_url_test';
 
-    /** @var array */
-    public $config = [];
-
-    /** @var xPDO */
-    public $modx;
-
-    /** @var miniShop2 */
-    public $ms2;
+    public const OPTION_SUCCESS_STATUS = 'success_status';
+    public const OPTION_FAILURE_STATUS = 'failure_status';
+    public const OPTION_SUCCESS_PAGE = 'success_page';
+    public const OPTION_FAILURE_PAGE = 'failure_page';
+    public const OPTION_UNPAID_PAGE = 'unpaid_page';
 
     /**
-     * @return xPDO
+     * @return string
      */
-    protected function getMODX()
+    public static function getPrefix(): string
     {
-        return $this->modx;
+        return self::PREFIX . strtolower(__CLASS__);
     }
 
     /**
@@ -61,48 +56,20 @@ class WebPay extends msPaymentHandler
     function __construct(xPDOObject $object, $config = [])
     {
         parent::__construct($object, $config);
-        
-        $this->config = array_merge(
-            array(
-                'store_name' => $this->modx->getOption('site_name'),
-                'store_id' => $this->modx->getOption('ms2_payment_webpay_store_id', '473977949'),
-                'secret' => $this->modx->getOption('ms2_payment_webpay_secret_key', 'gsfdgwertrfgsfdgsfzdfgdsfgsdf'),
-                'login' => $this->modx->getOption('ms2_payment_webpay_login', 'modcasts'),
-                'password' => $this->modx->getOption('ms2_payment_webpay_password', '8uTrE96Fjh'),
 
-                'checkout_url' => $this->modx->getOption('ms2_payment_webpay_checkout_url'),
-                'gate_url' => $this->modx->getOption('ms2_payment_webpay_gate_url'),
-
-                'version' => $this->modx->getOption('ms2_payment_webpay_version', 2, true),
-                'language' => $this->modx->getOption('ms2_payment_webpay_language', 'russian', true),
-                'currency' => $this->modx->getOption('ms2_payment_webpay_currency', 'BYR', true),
-
-                'developer_mode' => $this->modx->getOption('ms2_payment_webpay_developer_mode', 0, true),
-
-                'json_response' => false
-            ),
-            $config
-        );
-
-        $this->config['payment_url'] = join('/', [
-            rtrim($this->getMODX()->getOption('site_url'), '/'),
-            ltrim($this->getMODX()->getOption('assets_url'), '/'),
-            'components/mspwebpay/webpay.php'
-        ]);
-
-        if ($this->config['developer_mode']) {
-            $this->config['checkout_url'] = 'https://securesandbox.webpay.by';
-            $this->config['gate_url'] = 'https://sandbox.webpay.by';
-        }
+        $this->config = $config;
     }
 
     /**
      * @param msOrder $order
      * @return array|string
+     * @throws ReflectionException
      */
     public function send(msOrder $order)
     {
-        $link = $this->getPaymentLink($order);
+        if (!$link = $this->getPaymentLink($order)) {
+            return $this->error('Token and redirect url can not be requested. Please, look at error log.');
+        }
 
         return $this->success('', ['redirect' => $link]);
     }
@@ -110,65 +77,86 @@ class WebPay extends msPaymentHandler
     /**
      * @param msOrder $order
      * @return string
+     * @throws ReflectionException
      */
     public function getPaymentLink(msOrder $order)
     {
-        $id = $order->get('id');
-        $cost = $order->get('cost');
+        /** @var msPayment $payment */
+        $payment = $order->getOne('Payment');
 
-        $user = $order->getOne('User');
-        if ($user) {
-            $user = $user->getOne('Profile');
-        }
+        /** @var msOrderAddress $address */
         $address = $order->getOne('Address');
+
+        /** @var msDelivery $delivery */
         $delivery = $order->getOne('Delivery');
 
-        $products = $this->modx->getCollection('msOrderProduct', ['order_id' => $id]);
+        /** @var modUser $user */
+        $user = $order->getOne('User');
+        if ($user) {
+            /** @var modUserProfile $user */
+            $user = $user->getOne('Profile');
+        }
 
-        $random = md5(substr(md5(time()), 5, 10));
+        $this->config = $this->getProperties($payment);
+
+        if ($this->config[self::OPTION_DEVELOPER_MODE]) {
+            $this->config[self::OPTION_CHECKOUT_URL] = $this->config[self::OPTION_CHECKOUT_URL_TEST];
+            $this->config[self::OPTION_GATE_URL] = $this->config[self::OPTION_GATE_URL_TEST];
+        }
+
+        $this->config['return_url'] = implode('/', [
+            rtrim($this->getMODX()->getOption('site_url'), '/'),
+            ltrim($this->getMODX()->getOption('assets_url'), '/'),
+            'components/mspwebpay/webpay.php'
+        ]);
+
+        $seed = md5(substr(md5(time()), 5, 10));
 
         $request = [
             '*scart' => '',
-            'wsb_order_num' => $id,
-            'wsb_storeid' => $this->config['store_id'],
-            'wsb_store' => $this->config['store_name'],
-            'wsb_version' => $this->config['version'],
-            'wsb_currency_id' => $this->config['currency'],
-            'wsb_language_id' => $this->config['language'],
-            'wsb_seed' => $random,
-            'wsb_test' => $this->config['developer_mode'],
-            'wsb_return_url' => $this->config['payment_url'] . '?action=success',
-            'wsb_cancel_return_url' => $this->config['payment_url'] . '?action=cancel',
-            'wsb_notify_url' => $this->config['payment_url'] . '?action=notify',
-            //,'wsb_tax' => 0 // not required
+            'wsb_order_num' => $order->get('id'),
+            'wsb_storeid' => $this->config[self::OPTION_STORE_ID],
+            'wsb_store' => $this->config[self::OPTION_STORE_NAME],
+            'wsb_version' => $this->config[self::OPTION_VERSION],
+            'wsb_currency_id' => $this->config[self::OPTION_CURRENCY],
+            'wsb_language_id' => $this->config[self::OPTION_LANGUAGE],
+            'wsb_seed' => $seed,
+            'wsb_test' => $this->config[self::OPTION_DEVELOPER_MODE],
+            'wsb_return_url' => $this->config['return_url'] . '?action=success',
+            'wsb_cancel_return_url' => $this->config['return_url'] . '?action=cancel',
+            'wsb_notify_url' => $this->config['return_url'] . '?action=notify',
             'wsb_shipping_name' => $delivery->get('name'),
             'wsb_shipping_price' => $delivery->get('price'),
-            //,'wsb_discount_name' => '?' // not required
-            //,'wsb_discount_price' => '?' // not required
-            'wsb_total' => $cost,
+            'wsb_total' => $order->get('cost'),
             'wsb_email' => $user->get('email'),
             'wsb_phone' => $address->get('phone'),
-            //,'wsb_icn' => '' // not required // special
-            //,'wsb_card' => '' // not required // special
         ];
 
+        $products = $this->modx->getCollection(msOrderProduct::class, ['order_id' => $order->get('id')]);
+
         $i = 0;
-        /** @var msOrderProduct $product */
         foreach ($products as $product) {
+            /** @var msOrderProduct $product */
             $request["wsb_invoice_item_name[$i]"] = $product->get('name');
             $request["wsb_invoice_item_quantity[$i]"] = $product->get('count');
             $request["wsb_invoice_item_price[$i]"] = $product->get('price');
             $i++;
         }
-        $signature = sha1($request['wsb_seed'] . $request['wsb_storeid'] . $request['wsb_order_num'] . $request['wsb_test'] . $request['wsb_currency_id'] . $request['wsb_total'] . $this->config['secret']);
-        $request['wsb_signature'] = $signature;
 
-        $link = $this->config['payment_url'] . '?' . http_build_query([
+        $request['wsb_signature'] = sha1(implode('', array_intersect_key($request, array_flip([
+            'wsb_seed',
+            'wsb_storeid',
+            'wsb_order_num',
+            'wsb_test',
+            'wsb_currency_id',
+            'wsb_total',
+            'secret'
+        ]))));
+
+        return $this->config[self::OPTION_CHECKOUT_URL] . '?' . http_build_query([
                 'action' => 'payment',
                 'request' => json_encode($request),
             ]);
-
-        return $link;
     }
 
     /**
@@ -240,9 +228,9 @@ class WebPay extends msPaymentHandler
      */
     public function paymentError($text, $request = [])
     {
-        $this->modx->log(modX::LOG_LEVEL_ERROR, '[miniShop2:WebPay] ' . $text . ', request: ' . print_r($request, 1));
-        header("HTTP/1.0 400 Bad Request");
+        $this->log(sprintf('%s, request: %s', $text, print_r($request, 1)));
 
+        header('HTTP/1.0 400 Bad Request');
         die('ERROR: ' . $text);
     }
 }
