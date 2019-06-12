@@ -32,7 +32,7 @@ $_lang['setting_ms2_payment_webpay_developer_mode'] = 'Режим соверше
 $_lang['setting_ms2_payment_webpay_developer_mode_desc'] = 'При значении "Да", все запросы оплаты будут отправляться на тестовую среду обработки платежей WebPay. При включении данного режима настройки checkout_url и gate_url игнорируются.';
 
 $_lang['setting_ms2_payment_webpay_currency'] = 'Предлагаемая валюта платежа';
-$_lang['setting_ms2_payment_webpay_currency_desc'] = 'Пользователь может изменить ее в процессе оплаты. Буквенный трехзначный код валюты согласно ISO4271. Доступны варианты: BYR, USD, EUR, RUB. В режиме тестирования доступна только BYR.';
+$_lang['setting_ms2_payment_webpay_currency_desc'] = 'Пользователь может изменить ее в процессе оплаты. Буквенный трехзначный код валюты согласно ISO4271. Доступны варианты: BYN, USD, EUR, RUB. В режиме тестирования доступна только BYN.';
 
 $_lang['setting_ms2_payment_webpay_language'] = 'Язык WebPay';
 $_lang['setting_ms2_payment_webpay_language_desc'] = 'Укажите код языка, на котором показывать сайт WebPay при оплате. Доступны варианты: <strong>russian</strong>, <strong>english</strong>.';

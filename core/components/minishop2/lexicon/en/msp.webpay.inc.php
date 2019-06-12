@@ -32,7 +32,7 @@ $_lang['setting_ms2_payment_webpay_developer_mode'] = 'Test mode of payments';
 $_lang['setting_ms2_payment_webpay_developer_mode_desc'] = 'If the value "Yes", all requests payments will be send to a WebPay testing environment of payment processing. If you enabled this mode settings checkout_url and gate_url will be ignored.';
 
 $_lang['setting_ms2_payment_webpay_currency'] = 'The proposed currency of payment';
-$_lang['setting_ms2_payment_webpay_currency_desc'] = 'User can change it while paying. Literal-digit currency code according to ISO4271. Available variants: <strong>BYR</strong>, <strong>USD</strong>, <strong>EUR</strong>, <strong>RUB</strong>. In developer mode available only BYR.';
+$_lang['setting_ms2_payment_webpay_currency_desc'] = 'User can change it while paying. Literal-digit currency code according to ISO4271. Available variants: <strong>BYN</strong>, <strong>USD</strong>, <strong>EUR</strong>, <strong>RUB</strong>. In developer mode available only BYN.';
 
 $_lang['setting_ms2_payment_webpay_language'] = 'WebPay language';
 $_lang['setting_ms2_payment_webpay_language_desc'] = 'Specify the language code, which show\'s WebPay when paying. Available variants: <strong>russian</strong>, <strong>english</strong>.';
