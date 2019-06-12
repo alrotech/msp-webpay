@@ -5,19 +5,20 @@
  * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
 
-class msPaymentHandler {} // mocking for get access to WebPay class constants during the building the package
-require_once dirname(dirname(__DIR__)) . '/core/components/mspwebpay/WebPay.class.php';
+class msPaymentHandler {}
+class ConfigurablePaymentHandler {}
+require_once dirname(__DIR__, 2) . '/core/components/mspwebpay/WebPay.class.php';
 
 $list = [
     WebPay::OPTION_STORE_ID     => ['xtype' => 'textfield', 'value' => ''],
-    WebPay::OPTION_SECRET_KEY   => ['xtype' => 'textfield', 'value' => ''],
+    WebPay::OPTION_SECRET_KEY   => ['xtype' => 'text-password', 'value' => ''],
     WebPay::OPTION_LOGIN        => ['xtype' => 'textfield', 'value' => ''],
-    WebPay::OPTION_PASSWORD     => ['xtype' => 'textfield', 'value' => ''],
+    WebPay::OPTION_PASSWORD     => ['xtype' => 'text-password', 'value' => ''],
     WebPay::OPTION_CHECKOUT_URL => ['xtype' => 'textfield', 'value' => 'https://payment.webpay.by'],
     WebPay::OPTION_GATE_URL     => ['xtype' => 'textfield', 'value' => 'https://billing.webpay.by'],
     WebPay::OPTION_VERSION      => ['xtype' => 'numberfield', 'value' => 2],
     WebPay::OPTION_LANGUAGE     => ['xtype' => 'textfield', 'value' => 'russian'], // todo: replace by onw combo via plugin
-    WebPay::OPTION_CURRENCY     => ['xtype' => 'textfield', 'value' => 'BYR'], // todo: replace by onw combo via plugin
+    WebPay::OPTION_CURRENCY     => ['xtype' => 'textfield', 'value' => 'BYN'], // todo: replace by onw combo via plugin
     WebPay::OPTION_SUCCESS_STATUS   => ['xtype' => 'mspp-combo-status', 'value' => 2],
     WebPay::OPTION_FAILURE_STATUS   => ['xtype' => 'mspp-combo-status', 'value' => 4],
     WebPay::OPTION_SUCCESS_PAGE     => ['xtype' => 'mspp-combo-resource', 'value' => 0],
@@ -33,9 +34,9 @@ $settings = [];
 foreach ($list as $k => $v) {
     $setting = $xpdo->newObject(modSystemSetting::class);
     $setting->fromArray(array_merge([
-        'key' => WebPay::PREFIX . '_' . $k,
+        'key' => WebPay::getPrefix() . '_' . $k,
         'namespace' => 'minishop2',
-        'area' => WebPay::PREFIX,
+        'area' => WebPay::getPrefix(),
         'editedon' => null,
     ], $v), '', true, true);
 

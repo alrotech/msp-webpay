@@ -157,7 +157,7 @@ foreach ($settings as $setting) {
         'vehicle_class' => EncryptedVehicle::class,
         xPDOTransport::UNIQUE_KEY => 'key',
         xPDOTransport::PRESERVE_KEYS => true,
-        xPDOTransport::UPDATE_OBJECT => true,
+        xPDOTransport::UPDATE_OBJECT => false,
         'class' => modSystemSetting::class,
         'namespace' => PKG_NAME_LOWER
     ]);
