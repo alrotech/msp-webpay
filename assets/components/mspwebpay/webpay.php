@@ -6,7 +6,7 @@
  */
 
 define('MODX_API_MODE', true);
-require dirname(dirname(dirname(__DIR__))) . '/index.php';
+require dirname(__DIR__, 3) . '/index.php';
 
 $modx->getService('error', 'error.modError');
 $modx->setLogLevel(modX::LOG_LEVEL_ERROR);
@@ -17,29 +17,28 @@ $miniShop2 = $modx->getService('minishop2');
 $miniShop2->loadCustomClasses('payment');
 
 if (!class_exists('WebPay')) {
-    $msg = '[ms2::payment::WebPay] Could not load payment class "WebPay"';
-    $modx->log(modX::LOG_LEVEL_ERROR, $msg, '', '', __FILE__, __LINE__); die($msg);
+    $msg = '[ms2::payment::webpay] Could not load payment class "WebPay"';
+    $modx->log(modX::LOG_LEVEL_ERROR, $msg); die($msg);
 }
-
-$context = '';
-$params = [];
 
 $orderId = (int)$_GET['order'];
 $order = $modx->getObject('msOrder', $orderId);
 
 if (!$order || !$order instanceof msOrder) {
-    BePaid::fail("Order with id '$orderId' not found. Exit.");
+    $msg = '[ms2::payment::webpay] Order not found. Exit.';
+    $modx->log(modX::LOG_LEVEL_ERROR, $msg); die($msg);
 }
 
-$handler = new BePaid($order);
-
-/* @var msPaymentInterface|WebPay $handler */
-$handler = new WebPay($modx->newObject('msOrder'));
+$handler = new WebPay($order);
 
 switch ($_GET['action']) {
     case 'payment':
         $request = json_decode($_REQUEST['request']);
-        $url = $handler->config['checkout_url'];
+
+        $handler->config = $handler->getProperties($order->getOne('Payment'));
+        $handler->adjustCheckoutUrls();
+
+        $url = $handler->config[WebPay::OPTION_CHECKOUT_URL];
 
         $fields = [];
         foreach ($request as $k => $v) {
@@ -54,7 +53,7 @@ switch ($_GET['action']) {
         break;
     case 'notify':
         if (empty($_POST['site_order_id'])) {
-            $modx->log(modX::LOG_LEVEL_ERROR, '[ms2:payment:WebPay] Returned empty order id.');
+            $modx->log(modX::LOG_LEVEL_ERROR, '[ms2:payment:webpay] Returned empty order id.');
         }
         /** @var msOrder $order */
         $order = $modx->getObject('msOrder', $_POST['site_order_id']);

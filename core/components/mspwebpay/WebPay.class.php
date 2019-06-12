@@ -6,7 +6,7 @@
  */
 
 if (!class_exists('ConfigurablePaymentHandler')) {
-    $path = dirname(__DIR__, 3) . '/mspaymentproperties/ConfigurablePaymentHandler.class.php';
+    $path = MODX_CORE_PATH. 'components/mspaymentprops/ConfigurablePaymentHandler.class.php';
     if (is_readable($path)) {
         require_once $path;
     }
@@ -84,9 +84,6 @@ class WebPay extends ConfigurablePaymentHandler
         /** @var msPayment $payment */
         $payment = $order->getOne('Payment');
 
-        /** @var msOrderAddress $address */
-        $address = $order->getOne('Address');
-
         /** @var msDelivery $delivery */
         $delivery = $order->getOne('Delivery');
 
@@ -98,38 +95,35 @@ class WebPay extends ConfigurablePaymentHandler
         }
 
         $this->config = $this->getProperties($payment);
+        $this->adjustCheckoutUrls();
 
-        if ($this->config[self::OPTION_DEVELOPER_MODE]) {
-            $this->config[self::OPTION_CHECKOUT_URL] = $this->config[self::OPTION_CHECKOUT_URL_TEST];
-            $this->config[self::OPTION_GATE_URL] = $this->config[self::OPTION_GATE_URL_TEST];
+        $this->config['return_url'] = rtrim($this->getMODX()->getOption('site_url'), '/')
+            . $this->getMODX()->getOption('assets_url') . 'components/mspwebpay/webpay.php';
+
+        if (empty($this->config[self::OPTION_STORE_NAME])) {
+            $this->config[self::OPTION_STORE_NAME] = $this->modx->getOption('site_name', null);
         }
-
-        $this->config['return_url'] = implode('/', [
-            rtrim($this->getMODX()->getOption('site_url'), '/'),
-            ltrim($this->getMODX()->getOption('assets_url'), '/'),
-            'components/mspwebpay/webpay.php'
-        ]);
 
         $seed = md5(substr(md5(time()), 5, 10));
 
         $request = [
-            '*scart' => '',
-            'wsb_order_num' => $order->get('id'),
+            'wsb_seed' => $seed,
             'wsb_storeid' => $this->config[self::OPTION_STORE_ID],
+            'wsb_order_num' => $order->get('id'),
+            'wsb_test' => $this->config[self::OPTION_DEVELOPER_MODE],
+            'wsb_currency_id' => $this->config[self::OPTION_CURRENCY],
+            'wsb_total' => $order->get('cost'),
+
+            '*scart' => '',
             'wsb_store' => $this->config[self::OPTION_STORE_NAME],
             'wsb_version' => $this->config[self::OPTION_VERSION],
-            'wsb_currency_id' => $this->config[self::OPTION_CURRENCY],
             'wsb_language_id' => $this->config[self::OPTION_LANGUAGE],
-            'wsb_seed' => $seed,
-            'wsb_test' => $this->config[self::OPTION_DEVELOPER_MODE],
             'wsb_return_url' => $this->config['return_url'] . '?action=success',
             'wsb_cancel_return_url' => $this->config['return_url'] . '?action=cancel',
             'wsb_notify_url' => $this->config['return_url'] . '?action=notify',
             'wsb_shipping_name' => $delivery->get('name'),
             'wsb_shipping_price' => $delivery->get('price'),
-            'wsb_total' => $order->get('cost'),
-            'wsb_email' => $user->get('email'),
-            'wsb_phone' => $address->get('phone'),
+            'wsb_email' => $user->get('email')
         ];
 
         $products = $this->modx->getCollection(msOrderProduct::class, ['order_id' => $order->get('id')]);
@@ -143,20 +137,27 @@ class WebPay extends ConfigurablePaymentHandler
             $i++;
         }
 
-        $request['wsb_signature'] = sha1(implode('', array_intersect_key($request, array_flip([
+        $signatureParts = array_intersect_key($request, array_flip([
             'wsb_seed',
             'wsb_storeid',
             'wsb_order_num',
             'wsb_test',
             'wsb_currency_id',
-            'wsb_total',
-            'secret'
-        ]))));
+            'wsb_total'
+        ]));
+        $signatureParts[] = $this->config[self::OPTION_SECRET_KEY];
 
-        return $this->config[self::OPTION_CHECKOUT_URL] . '?' . http_build_query([
-                'action' => 'payment',
-                'request' => json_encode($request),
-            ]);
+        $request['wsb_signature'] = sha1(implode('', $signatureParts));
+
+        return $this->config['return_url'] . '?' . http_build_query(['action' => 'payment', 'order' => $order->get('id'), 'request' => json_encode($request)]);
+    }
+
+    public function adjustCheckoutUrls(): void
+    {
+        if ($this->config[self::OPTION_DEVELOPER_MODE]) {
+            $this->config[self::OPTION_CHECKOUT_URL] = $this->config[self::OPTION_CHECKOUT_URL_TEST];
+            $this->config[self::OPTION_GATE_URL] = $this->config[self::OPTION_GATE_URL_TEST];
+        }
     }
 
     /**
