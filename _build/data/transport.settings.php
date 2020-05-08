@@ -1,88 +1,46 @@
 <?php
 /**
- * Loads system settings into build
- *
- * @package mspwebpay
- * @subpackage build
+ * Copyright (c) Ivan Klimchuk - All Rights Reserved
+ * Unauthorized copying, changing, distributing this file, via any medium, is strictly prohibited.
+ * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
-$settings = array();
 
-$tmp = array(
-    'store_id' => array(
-        'xtype' => 'textfield',
-        'value' => '',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'secret_key' => array(
-        'xtype' => 'textfield',
-        'value' => '',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'login' => array(
-        'xtype' => 'textfield',
-        'value' => '',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'password' => array(
-        'xtype' => 'textfield',
-        'value' => '',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'checkout_url' => array(
-        'xtype' => 'textfield',
-        'value' => 'https://secure.webpay.by',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'gate_url' => array(
-        'xtype' => 'textfield',
-        'value' => 'https://billing.webpay.by',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'version' => array(
-        'xtype' => 'numberfield',
-        'value' => 2,
-        'area' => 'ms2_payment_webpay'
-    ),
-    'developer_mode' => array(
-        'xtype' => 'combo-boolean',
-        'value' => true,
-        'area' => 'ms2_payment_webpay'
-    ),
-    'language' => array(
-        'xtype' => 'textfield',
-        'value' => 'russian',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'currency' => array(
-        'xtype' => 'textfield',
-        'value' => 'BYR',
-        'area' => 'ms2_payment_webpay'
-    ),
-    'success_id' => array(
-        'xtype' => 'numberfield',
-        'value' => 0,
-        'area' => 'ms2_payment_webpay'
-    ),
-    'failure_id' => array(
-        'xtype' => 'numberfield',
-        'value' => 0,
-        'area' => 'ms2_payment_webpay'
-    ),
-);
+class msPaymentHandler {}
+class ConfigurablePaymentHandler {}
+require_once dirname(__DIR__, 2) . '/core/components/mspwebpay/WebPay.class.php';
 
-foreach ($tmp as $k => $v) {
-    /* @var modSystemSetting $setting */
-    $setting = $modx->newObject('modSystemSetting');
-    $setting->fromArray(array_merge(
-        array(
-            'key' => 'ms2_payment_webpay_' . $k,
-            'namespace' => 'minishop2',
-            'area' => 'ms2_payment',
-        ), $v
-    ),'',true,true);
+$list = [
+    WebPay::OPTION_STORE_ID     => ['xtype' => 'textfield', 'value' => ''],
+    WebPay::OPTION_SECRET_KEY   => ['xtype' => 'text-password', 'value' => ''],
+    WebPay::OPTION_LOGIN        => ['xtype' => 'textfield', 'value' => ''],
+    WebPay::OPTION_PASSWORD     => ['xtype' => 'text-password', 'value' => ''],
+    WebPay::OPTION_CHECKOUT_URL => ['xtype' => 'textfield', 'value' => 'https://payment.webpay.by'],
+    WebPay::OPTION_GATE_URL     => ['xtype' => 'textfield', 'value' => 'https://billing.webpay.by'],
+    WebPay::OPTION_VERSION      => ['xtype' => 'numberfield', 'value' => 2],
+    WebPay::OPTION_LANGUAGE     => ['xtype' => 'textfield', 'value' => 'russian'], // todo: replace by onw combo via plugin
+    WebPay::OPTION_CURRENCY     => ['xtype' => 'textfield', 'value' => 'BYN'], // todo: replace by onw combo via plugin
+    WebPay::OPTION_SUCCESS_STATUS   => ['xtype' => 'mspp-combo-status', 'value' => 2],
+    WebPay::OPTION_FAILURE_STATUS   => ['xtype' => 'mspp-combo-status', 'value' => 4],
+    WebPay::OPTION_SUCCESS_PAGE     => ['xtype' => 'mspp-combo-resource', 'value' => 0],
+    WebPay::OPTION_FAILURE_PAGE     => ['xtype' => 'mspp-combo-resource', 'value' => 0],
+    WebPay::OPTION_UNPAID_PAGE      => ['xtype' => 'mspp-combo-resource', 'value' => 0],
+
+    WebPay::OPTION_DEVELOPER_MODE   => ['xtype' => 'combo-boolean', 'value' => true],
+    WebPay::OPTION_CHECKOUT_URL_TEST => ['xtype' => 'textfield', 'value' => 'https://securesandbox.webpay.by'],
+    WebPay::OPTION_GATE_URL_TEST     => ['xtype' => 'textfield', 'value' => 'https://sandbox.webpay.by'],
+];
+
+$settings = [];
+foreach ($list as $k => $v) {
+    $setting = $xpdo->newObject(modSystemSetting::class);
+    $setting->fromArray(array_merge([
+        'key' => WebPay::getPrefix() . '_' . $k,
+        'namespace' => 'minishop2',
+        'area' => WebPay::getPrefix(),
+        'editedon' => null,
+    ], $v), '', true, true);
 
     $settings[] = $setting;
 }
 
-unset($tmp);
 return $settings;

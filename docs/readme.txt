@@ -1,1 +1,3 @@
-Расширение miniShop2 для приема платежей от WebPay. Актуально только для магазинов в Республике Беларусь.
+Payment's plugin for e-commerce based on miniShop2 through the WebPay payment system.
+
+Details and docs there: http://docs.modx.pro/components/minishop2/payment-modules/mspwebpay

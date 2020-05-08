@@ -1,182 +1,228 @@
 <?php
 /**
- * mspWebPay build script
- *
- * @package mspwebpay
- * @subpackage build
+ * Copyright (c) Ivan Klimchuk - All Rights Reserved
+ * Unauthorized copying, changing, distributing this file, via any medium, is strictly prohibited.
+ * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
-$mtime = microtime();
-$mtime = explode(' ', $mtime);
-$mtime = $mtime[1] + $mtime[0];
-$tstart = $mtime;
+
 set_time_limit(0);
+error_reporting(E_ALL | E_STRICT); ini_set('display_errors',true);
 
-require_once 'build.config.php';
+ini_set('date.timezone', 'Europe/Minsk');
 
-/* define sources */
-$root = dirname(dirname(__FILE__)).'/';
-$sources = array(
-    'root' => $root,
+define('PKG_NAME', 'mspWebPay');
+define('PKG_NAME_LOWER', strtolower(PKG_NAME));
+define('PKG_VERSION', '2.1.0');
+define('PKG_RELEASE', 'pl');
+define('PKG_SUPPORTS_PHP', '7.1');
+define('PKG_SUPPORTS_MODX', '2.7');
+define('PKG_SUPPORTS_MS2', '2.4');
+
+require_once __DIR__ . '/vendor/modx/revolution/core/xpdo/xpdo.class.php';
+
+/* instantiate xpdo instance */
+$xpdo = new xPDO('mysql:host=localhost;dbname=modx;charset=utf8', 'root', '',
+    [xPDO::OPT_TABLE_PREFIX => 'modx_', xPDO::OPT_CACHE_PATH => __DIR__ . '/../../../core/cache/'],
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING]
+);
+$cacheManager= $xpdo->getCacheManager();
+$xpdo->setLogLevel(xPDO::LOG_LEVEL_INFO);
+$xpdo->setLogTarget();
+
+$root = dirname(__DIR__) . '/';
+$sources = [
     'build' => $root . '_build/',
     'data' => $root . '_build/data/',
+    'docs' => $root . 'docs/',
     'resolvers' => $root . '_build/resolvers/',
-    'source_assets' => array(
-        'components/minishop2/payment/webpay.php'
-    ),
-    'source_core' => array(
-        'components/minishop2/custom/payment/webpay.class.php',
+    'validators' => $root . '_build/validators/',
+    'implants' => $root . '_build/implants/',
+    'plugins' => $root . 'core/components/' . PKG_NAME_LOWER . '/elements/plugins/',
+    'assets' => [
+        'components/mspwebpay/'
+    ],
+    'core' => [
+        'components/mspwebpay/',
         'components/minishop2/lexicon/en/msp.webpay.inc.php',
         'components/minishop2/lexicon/ru/msp.webpay.inc.php'
-    )
-,'docs' => $root . 'docs/'
-);
-require_once MODX_CORE_PATH . 'model/modx/modx.class.php';
+    ],
+];
 
-$modx= new modX();
-$modx->initialize('mgr');
-echo '<pre>'; /* used for nice formatting of log messages */
-$modx->setLogLevel(modX::LOG_LEVEL_INFO);
-$modx->setLogTarget('ECHO');
+$signature = implode('-', [PKG_NAME, PKG_VERSION, PKG_RELEASE]);
 
-$modx->loadClass('transport.modPackageBuilder','',false, true);
-$builder = new modPackageBuilder($modx);
-$builder->createPackage(PKG_NAME_LOWER,PKG_VERSION,PKG_RELEASE);
-$modx->log(modX::LOG_LEVEL_INFO,'Created Transport Package.');
-
-/* load system settings */
-if (defined('BUILD_SETTING_UPDATE')) {
-    $settings = include $sources['data'].'transport.settings.php';
-    if (!is_array($settings)) {
-        $modx->log(modX::LOG_LEVEL_ERROR,'Could not package in settings.');
-    } else {
-        $attributes= array(
-            xPDOTransport::UNIQUE_KEY => 'key',
-            xPDOTransport::PRESERVE_KEYS => true,
-            xPDOTransport::UPDATE_OBJECT => BUILD_SETTING_UPDATE,
-        );
-        foreach ($settings as $setting) {
-            $vehicle = $builder->createVehicle($setting,$attributes);
-            $builder->putVehicle($vehicle);
-        }
-        $modx->log(modX::LOG_LEVEL_INFO,'Packaged in '.count($settings).' System Settings.');
-    }
-    unset($settings,$setting,$attributes);
+$release = false;
+if (!empty($argv) && $argc > 1) {
+    $release = $argv[1];
 }
 
-/* @var msPayment $payment */
-$payment= $modx->newObject('msPayment');
-$payment->fromArray(
-    array(
-        'name' => 'WebPay',
-        'active' => 0,
-        'class' => 'WebPay'
-    )
-);
+$directory = $release === 'release' ? $root . '_packages/' : __DIR__ . '/../../../core/packages/';
+$filename = $directory . $signature . '.transport.zip';
 
-/* create payment vehicle */
-$attributes = array(
+/* remove the package if it's already been made */
+if (file_exists($filename)) {
+    unlink($filename);
+}
+if (file_exists($directory . $signature) && is_dir($directory . $signature)) {
+    $cacheManager = $xpdo->getCacheManager();
+    if ($cacheManager) {
+        $cacheManager->deleteTree($directory . $signature, true, false, []);
+    }
+}
+
+$xpdo->loadClass('transport.xPDOTransport', XPDO_CORE_PATH, true, true);
+$xpdo->loadClass('transport.xPDOVehicle', XPDO_CORE_PATH, true, true);
+$xpdo->loadClass('transport.xPDOObjectVehicle', XPDO_CORE_PATH, true, true);
+$xpdo->loadClass('transport.xPDOFileVehicle', XPDO_CORE_PATH, true, true);
+$xpdo->loadClass('transport.xPDOScriptVehicle', XPDO_CORE_PATH, true, true);
+
+require_once __DIR__ . '/helpers/ArrayXMLConverter.php';
+require_once __DIR__ . '/implants/encryptedvehicle.class.php';
+
+$credentials = file_get_contents(__DIR__ . '/../.encryption');
+[$username, $key] = explode(':', $credentials);
+
+if (empty($username) || empty($key)) {
+    $xpdo->log(xPDO::LOG_LEVEL_ERROR, 'Credentials not found');
+    exit;
+}
+
+$params = [
+    'api_key' => $key,
+    'username' => $username,
+    'http_host' => 'anysite.docker',
+    'package' => PKG_NAME,
+    'version' => PKG_VERSION . '-' . PKG_RELEASE,
+    'vehicle_version' => '2.0.0'
+];
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, 'https://modstore.pro/extras/package/encode');
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+curl_setopt($ch, CURLOPT_POSTFIELDS, ArrayXMLConverter::toXML($params,'request'));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+$result = trim(curl_exec($ch));
+curl_close($ch);
+
+$answer = ArrayXMLConverter::toArray($result);
+
+if (isset($answer['message'])) {
+    $xpdo->log(xPDO::LOG_LEVEL_ERROR, $answer['message']);
+    echo $answer['message'];
+    exit;
+}
+
+define('PKG_ENCODE_KEY', $answer['key']);
+
+$package = new xPDOTransport($xpdo, $signature, $directory);
+
+$xpdo->setPackage('modx', __DIR__ . '/vendor/modx/revolution/core/model/');
+$xpdo->loadClass(modAccess::class);
+$xpdo->loadClass(modAccessibleObject::class);
+$xpdo->loadClass(modAccessibleSimpleObject::class);
+$xpdo->loadClass(modPrincipal::class);
+$xpdo->loadClass(modElement::class);
+$xpdo->loadClass(modScript::class);
+
+$package->put([
+    'source' => $sources['implants'] . 'encryptedvehicle.class.php',
+    'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME_LOWER . "/';",
+], ['vehicle_class' => xPDOFileVehicle::class]);
+
+$package->put([
+    'source' => $sources['resolvers'] . 'resolve.encryption.php'
+], ['vehicle_class' => xPDOScriptVehicle::class]);
+
+$namespace = $xpdo->newObject(modNamespace::class);
+$namespace->fromArray([
+    'id' => PKG_NAME_LOWER,
+    'name' => PKG_NAME_LOWER,
+    'path' => '{core_path}components/' . PKG_NAME_LOWER . '/',
+]);
+
+$package->put($namespace, [
+    'vehicle_class' => EncryptedVehicle::class,
     xPDOTransport::UNIQUE_KEY => 'name',
-    xPDOTransport::PRESERVE_KEYS => false,
-    xPDOTransport::UPDATE_OBJECT => false
+    xPDOTransport::PRESERVE_KEYS => true,
+    xPDOTransport::UPDATE_OBJECT => true,
+    xPDOTransport::NATIVE_KEY => PKG_NAME_LOWER,
+    'namespace' => PKG_NAME_LOWER
+]);
+
+$settings = include $sources['data'] . 'transport.settings.php';
+foreach ($settings as $setting) {
+    $package->put($setting, [
+        'vehicle_class' => EncryptedVehicle::class,
+        xPDOTransport::UNIQUE_KEY => 'key',
+        xPDOTransport::PRESERVE_KEYS => true,
+        xPDOTransport::UPDATE_OBJECT => false,
+        'class' => modSystemSetting::class,
+        'namespace' => PKG_NAME_LOWER
+    ]);
+}
+
+$category = $xpdo->newObject(modCategory::class);
+$category->fromArray(['id' => 1, 'category' => PKG_NAME, 'parent' => 0]);
+
+//$plugins = include $sources['data'] . 'transport.plugins.php';
+//if (is_array($plugins)) {
+//    $category->addMany($plugins, 'Plugins');
+//}
+
+$validators = [];
+array_push($validators,
+    ['type' => 'php', 'source' => $sources['validators'] . 'validate.phpversion.php'],
+    ['type' => 'php', 'source' => $sources['validators'] . 'validate.modxversion.php'],
+    ['type' => 'php', 'source' => $sources['validators'] . 'validate.bcmath.php']
 );
-$vehicle = $builder->createVehicle($payment,$attributes);
 
-$modx->log(modX::LOG_LEVEL_INFO,'Adding file resolvers to payment...');
-foreach($sources['source_assets'] as $file) {
-    $dir = dirname($file) . '/';
-    $vehicle->resolve(
-        'file',
-        array(
-            'source' => $root . 'assets/' . $file,
-            'target' => "return MODX_ASSETS_PATH . '{$dir}';",
-        )
-    );
+$resolvers = [];
+foreach ($sources['assets'] as $file) {
+    $directory = dirname($file);
+    $resolvers[] = [
+        'type' => 'file',
+        'source' => $root . 'assets/' . $file,
+        'target' => "return MODX_ASSETS_PATH . '$directory/';",
+    ];
 }
-foreach($sources['source_core'] as $file) {
-    $dir = dirname($file) . '/';
-    $vehicle->resolve(
-        'file',
-        array(
-            'source' => $root . 'core/'. $file,
-            'target' => "return MODX_CORE_PATH . '{$dir}';"
-        )
-    );
-}
-unset($file, $attributes);
-
-$resolvers = array('settings');
-foreach ($resolvers as $resolver) {
-    if ($vehicle->resolve('php', array('source' => $sources['resolvers'] . 'resolve.'.$resolver.'.php'))) {
-        $modx->log(modX::LOG_LEVEL_INFO,'Added resolver "'.$resolver.'" to category.');
-    } else {
-        $modx->log(modX::LOG_LEVEL_INFO,'Could not add resolver "'.$resolver.'" to category.');
-    }
+foreach ($sources['core'] as $file) {
+    $directory = dirname($file);
+    $resolvers[] = [
+        'type' => 'file',
+        'source' => $root . 'core/' . $file,
+        'target' => "return MODX_CORE_PATH . '$directory/';"
+    ];
 }
 
-flush();
-$builder->putVehicle($vehicle);
+$resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php'];
 
-/* now pack in the license file, readme and setup options */
-$builder->setPackageAttributes(
-    array(
-        'changelog' => file_get_contents($sources['docs'] . 'changelog.txt'),
-        'license' => file_get_contents($sources['docs'] . 'license.txt'),
-        'readme' => file_get_contents($sources['docs'] . 'readme.txt'),
-        'setup-options' => array(
-            'source' => $sources['build'] . 'setup.options.php'
-        )
-    ));
-$modx->log(modX::LOG_LEVEL_INFO,'Added package attributes and setup options.');
 
-/* zip up package */
-$modx->log(modX::LOG_LEVEL_INFO,'Packing up transport package zip...');
-$builder->pack();
-$modx->log(modX::LOG_LEVEL_INFO,"\n<br />Package Built.<br />");
+// todo: remove category and replace by file resolvers (in future probably it will be possible to encrypt files too);
+$package->put($category, [
+    'vehicle_class' => EncryptedVehicle::class,
+    xPDOTransport::UNIQUE_KEY => 'category',
+    xPDOTransport::PRESERVE_KEYS => false,
+    xPDOTransport::UPDATE_OBJECT => true,
+    xPDOTransport::ABORT_INSTALL_ON_VEHICLE_FAIL => true,
+    xPDOTransport::RELATED_OBJECTS => false,
+    xPDOTransport::NATIVE_KEY => true,
+    'package' => 'modx',
+    'resolve' => $resolvers,
+    'validate' => $validators
+]);
 
-$mtime= microtime();
-$mtime= explode(" ", $mtime);
-$mtime= $mtime[1] + $mtime[0];
-$tend= $mtime;
-$totalTime= ($tend - $tstart);
-$totalTime= sprintf("%2.4f s", $totalTime);
+$package->setAttribute('changelog', file_get_contents($sources['docs'] . 'changelog.txt'));
+$package->setAttribute('license', file_get_contents($sources['docs'] . 'license.txt'));
+$package->setAttribute('readme', file_get_contents($sources['docs'] . 'readme.txt'));
+$package->setAttribute('requires', [
+    'php' => '>=' . PKG_SUPPORTS_PHP,
+    'modx' => '>=' . PKG_SUPPORTS_MODX,
+    'miniShop2' => '>=' . PKG_SUPPORTS_MS2,
+    'msPaymentProps' => '*'
+]);
 
-$signature = $builder->getSignature();
-if (defined('PKG_AUTO_INSTALL') && PKG_AUTO_INSTALL) {
-    $sig = explode('-',$signature);
-    $versionSignature = explode('.',$sig[1]);
-
-    /* @var modTransportPackage $package */
-    if (!$package = $modx->getObject('transport.modTransportPackage', array('signature' => $signature))) {
-        $package = $modx->newObject('transport.modTransportPackage');
-        $package->set('signature', $signature);
-        $package->fromArray(array(
-                'created' => date('Y-m-d h:i:s'),
-                'updated' => null,
-                'state' => 1,
-                'workspace' => 1,
-                'provider' => 0,
-                'source' => $signature.'.transport.zip',
-                'package_name' => $sig[0],
-                'version_major' => $versionSignature[0],
-                'version_minor' => !empty($versionSignature[1]) ? $versionSignature[1] : 0,
-                'version_patch' => !empty($versionSignature[2]) ? $versionSignature[2] : 0,
-            ));
-        if (!empty($sig[2])) {
-            $r = preg_split('/([0-9]+)/',$sig[2],-1,PREG_SPLIT_DELIM_CAPTURE);
-            if (is_array($r) && !empty($r)) {
-                $package->set('release',$r[0]);
-                $package->set('release_index',(isset($r[1]) ? $r[1] : '0'));
-            } else {
-                $package->set('release',$sig[2]);
-            }
-        }
-        $package->save();
-    }
-    $package->install();
+if ($package->pack()) {
+    $xpdo->log(xPDO::LOG_LEVEL_INFO, 'Package built');
 }
-if (!empty($_GET['download'])) {
-    echo '<script>document.location.href = "/core/packages/' . $signature.'.transport.zip' . '";</script>';
-}
-
-$modx->log(modX::LOG_LEVEL_INFO,"\n<br />Execution time: {$totalTime}\n");
-echo '</pre>';
