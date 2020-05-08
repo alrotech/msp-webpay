@@ -9,16 +9,16 @@
     "packages-dev": [
         {
             "name": "modx/revolution",
-            "version": "v2.7.1-pl",
+            "version": "v2.7.3-pl",
             "source": {
                 "type": "git",
                 "url": "https://github.com/modxcms/revolution.git",
-                "reference": "8e18b7c368ee93c1894a170c3c59b5c011fee720"
+                "reference": "8375249e93dd9a9e8f1979e8f7ba407b79f1b913"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/modxcms/revolution/zipball/8e18b7c368ee93c1894a170c3c59b5c011fee720",
-                "reference": "8e18b7c368ee93c1894a170c3c59b5c011fee720",
+                "url": "https://api.github.com/repos/modxcms/revolution/zipball/8375249e93dd9a9e8f1979e8f7ba407b79f1b913",
+                "reference": "8375249e93dd9a9e8f1979e8f7ba407b79f1b913",
                 "shasum": ""
             },
             "require": {
@@ -61,7 +61,7 @@
                 "routing",
                 "templating"
             ],
-            "time": "2019-02-14T17:11:26+00:00"
+            "time": "2020-02-27T18:16:16+00:00"
         }
     ],
     "aliases": [],

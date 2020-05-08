@@ -14,9 +14,9 @@ define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
 define('PKG_VERSION', '2.1.0');
 define('PKG_RELEASE', 'pl');
-define('PKG_SUPPORTS_PHP', '7.1');
+define('PKG_SUPPORTS_PHP', '7.2');
 define('PKG_SUPPORTS_MODX', '2.7');
-define('PKG_SUPPORTS_MS2', '2.4');
+define('PKG_SUPPORTS_MS2', '2.5');
 
 require_once __DIR__ . '/vendor/modx/revolution/core/xpdo/xpdo.class.php';
 
@@ -79,7 +79,9 @@ require_once __DIR__ . '/helpers/ArrayXMLConverter.php';
 require_once __DIR__ . '/implants/encryptedvehicle.class.php';
 
 $credentials = file_get_contents(__DIR__ . '/../.encryption');
-[$username, $key] = explode(':', $credentials);
+if ($credentials) {
+    [$username, $key] = explode(':', $credentials);
+}
 
 if (empty($username) || empty($key)) {
     $xpdo->log(xPDO::LOG_LEVEL_ERROR, 'Credentials not found');
@@ -198,8 +200,6 @@ foreach ($sources['core'] as $file) {
 
 $resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php'];
 
-
-// todo: remove category and replace by file resolvers (in future probably it will be possible to encrypt files too);
 $package->put($category, [
     'vehicle_class' => EncryptedVehicle::class,
     xPDOTransport::UNIQUE_KEY => 'category',
