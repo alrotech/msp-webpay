@@ -10,27 +10,29 @@
  */
 class EncryptedVehicle extends xPDOObjectVehicle
 {
-    const VERSION = '2.0.0';
-    const CIPHER = 'AES-256-CBC';
+    public const VERSION = '2.0.0';
+    private const CIPHER = 'aes-256-cbc';
 
     public $class = self::class;
 
     /**
-     * @param $transport xPDOTransport
-     * @param $object
+     * @param       $transport xPDOTransport
+     * @param       $object
      * @param array $attributes
      */
-    public function put(&$transport, &$object, $attributes = array())
+    public function put(&$transport, &$object, $attributes = [])
     {
         parent::put($transport, $object, $attributes);
 
         if (defined('PKG_ENCODE_KEY')) {
-
             $this->payload['object_encrypted'] = $this->encode($this->payload['object'], PKG_ENCODE_KEY);
             unset($this->payload['object']);
 
             if (isset($this->payload['related_objects'])) {
-                $this->payload['related_objects_encrypted'] = $this->encode($this->payload['related_objects'], PKG_ENCODE_KEY);
+                $this->payload['related_objects_encrypted'] = $this->encode(
+                    $this->payload['related_objects'],
+                    PKG_ENCODE_KEY
+                );
                 unset($this->payload['related_objects']);
             }
         }
@@ -73,7 +75,7 @@ class EncryptedVehicle extends xPDOObjectVehicle
     }
 
     /**
-     * @param array $data
+     * @param array  $data
      * @param string $key
      *
      * @return string
@@ -98,27 +100,21 @@ class EncryptedVehicle extends xPDOObjectVehicle
         $ivLen = openssl_cipher_iv_length(self::CIPHER);
         $encoded = base64_decode($string);
 
-        if (ini_get('mbstring.func_overload')) {
-            $strLen = mb_strlen($encoded, '8bit');
-            $iv = mb_substr($encoded, 0, $ivLen, '8bit');
-            $cipher_raw = mb_substr($encoded, $ivLen, $strLen, '8bit');
-        } else {
-            $iv = substr($encoded, 0, $ivLen);
-            $cipher_raw = substr($encoded, $ivLen);
-        }
+        $iv = substr($encoded, 0, $ivLen);
+        $cipher_raw = substr($encoded, $ivLen);
 
         return unserialize(openssl_decrypt($cipher_raw, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv));
     }
 
     /**
-     * @param $transport xPDOTransport
+     * @param        $transport xPDOTransport
      * @param string $action
      *
      * @return bool
      */
     protected function decodePayloads(&$transport, $action = 'install')
     {
-        if (isset($this->payload['object_encrypted']) || isset($this->payload['related_objects_encrypted'])) {
+        if (array_key_exists(['object_encrypted', 'related_objects_encrypted'], $this->payload)) {
             if (!$key = $this->getDecodeKey($transport, $action)) {
                 return false;
             }
@@ -147,22 +143,24 @@ class EncryptedVehicle extends xPDOObjectVehicle
         $endpoint = 'package/decode/' . $action;
 
         /** @var modTransportPackage $package */
-        $package = $transport->xpdo->getObject('transport.modTransportPackage', [
-            'signature' => $transport->signature
-        ]);
+        $package = $transport->xpdo->getObject(
+            'transport.modTransportPackage',
+            [
+                'signature' => $transport->signature,
+            ]
+        );
 
         if ($package instanceof modTransportPackage) {
             /** @var modTransportProvider $provider */
             if ($provider = $package->getOne('Provider')) {
-
                 $provider->xpdo->setOption('contentType', 'default');
-                $params = array(
+                $params = [
                     'package' => $package->package_name,
                     'version' => $transport->version,
                     'username' => $provider->username,
                     'api_key' => $provider->api_key,
                     'vehicle_version' => self::VERSION,
-                );
+                ];
 
                 $response = $provider->request($endpoint, 'POST', $params);
 
@@ -177,6 +175,42 @@ class EncryptedVehicle extends xPDOObjectVehicle
                         $transport->xpdo->log(xPDO::LOG_LEVEL_ERROR, $data->message);
                     }
                 }
+            } else {
+
+                include_once __DIR__ . '/ArrayXMLConverter.php';
+
+                $credentials = file_get_contents(sprintf('%s/pkg/%s/.encryption', MODX_CORE_PATH, $package->package_name));
+
+                $username = $secret = '';
+
+                if ($credentials) {
+                    [$username, $secret] = explode(':', $credentials);
+                }
+
+                // only for local installation during development
+                $params = [
+                    'api_key' => $secret,
+                    'username' => $username,
+                    'http_host' => 'anysite.docker',
+                    'package' => $package->package_name,
+                    'version' => $transport->version,
+                    'vehicle_version' => self::VERSION,
+                ];
+
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, sprintf('https://modstore.pro/extras/%s', $endpoint));
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/xml']);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, ArrayXMLConverter::toXML($params, 'request'));
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                $result = trim(curl_exec($ch));
+                curl_close($ch);
+
+                $answer = ArrayXMLConverter::toArray($result);
+
+                $key = $answer['key'];
             }
         }
 

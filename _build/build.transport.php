@@ -13,8 +13,9 @@ ini_set('date.timezone', 'Europe/Minsk');
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
 define('PKG_VERSION', '2.1.0');
-define('PKG_RELEASE', 'pl');
-define('PKG_SUPPORTS_PHP', '7.2');
+define('PKG_RELEASE', 'beta');
+
+define('PKG_SUPPORTS_PHP', '7.4');
 define('PKG_SUPPORTS_MODX', '2.7');
 define('PKG_SUPPORTS_MS2', '2.5');
 
@@ -34,17 +35,22 @@ $sources = [
     'build' => $root . '_build/',
     'data' => $root . '_build/data/',
     'docs' => $root . 'docs/',
+
     'resolvers' => $root . '_build/resolvers/',
     'validators' => $root . '_build/validators/',
+
     'implants' => $root . '_build/implants/',
+    'helpers' => $root . '_build/helpers/',
     'plugins' => $root . 'core/components/' . PKG_NAME_LOWER . '/elements/plugins/',
+
     'assets' => [
         'components/mspwebpay/'
     ],
     'core' => [
         'components/mspwebpay/',
         'components/minishop2/lexicon/en/msp.webpay.inc.php',
-        'components/minishop2/lexicon/ru/msp.webpay.inc.php'
+        'components/minishop2/lexicon/ru/msp.webpay.inc.php',
+        'components/minishop2/lexicon/be/msp.webpay.inc.php'
     ],
 ];
 
@@ -128,14 +134,28 @@ $xpdo->loadClass(modPrincipal::class);
 $xpdo->loadClass(modElement::class);
 $xpdo->loadClass(modScript::class);
 
-$package->put([
-    'source' => $sources['implants'] . 'encryptedvehicle.class.php',
-    'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME_LOWER . "/';",
-], ['vehicle_class' => xPDOFileVehicle::class]);
+$package->put(
+    [
+        'source' => $sources['implants'] . 'encryptedvehicle.class.php',
+        'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME_LOWER . "/';",
+    ],
+    ['vehicle_class' => xPDOFileVehicle::class]
+);
 
-$package->put([
-    'source' => $sources['resolvers'] . 'resolve.encryption.php'
-], ['vehicle_class' => xPDOScriptVehicle::class]);
+$package->put(
+    [
+        'source' => $sources['helpers'] . 'ArrayXMLConverter.php',
+        'target' => "return MODX_CORE_PATH . 'components/" . PKG_NAME_LOWER . "/';",
+    ],
+    ['vehicle_class' => xPDOFileVehicle::class]
+);
+
+$package->put(
+    [
+        'source' => $sources['resolvers'] . 'resolve.encryption.php',
+    ],
+    ['vehicle_class' => xPDOScriptVehicle::class]
+);
 
 $namespace = $xpdo->newObject(modNamespace::class);
 $namespace->fromArray([
@@ -212,6 +232,8 @@ $package->put($category, [
     'resolve' => $resolvers,
     'validate' => $validators
 ]);
+
+$package->setAttribute();
 
 $package->setAttribute('changelog', file_get_contents($sources['docs'] . 'changelog.txt'));
 $package->setAttribute('license', file_get_contents($sources['docs'] . 'license.txt'));
