@@ -233,8 +233,6 @@ $package->put($category, [
     'validate' => $validators
 ]);
 
-$package->setAttribute();
-
 $package->setAttribute('changelog', file_get_contents($sources['docs'] . 'changelog.txt'));
 $package->setAttribute('license', file_get_contents($sources['docs'] . 'license.txt'));
 $package->setAttribute('readme', file_get_contents($sources['docs'] . 'readme.txt'));
