@@ -114,7 +114,9 @@ class EncryptedVehicle extends xPDOObjectVehicle
      */
     protected function decodePayloads(&$transport, $action = 'install')
     {
-        if (array_key_exists(['object_encrypted', 'related_objects_encrypted'], $this->payload)) {
+        $keysFound = count(array_intersect(['object_encrypted', 'related_objects_encrypted'], array_keys($this->payload)));
+
+        if ($keysFound) {
             if (!$key = $this->getDecodeKey($transport, $action)) {
                 return false;
             }

@@ -13,7 +13,7 @@ ini_set('date.timezone', 'Europe/Minsk');
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
 define('PKG_VERSION', '2.1.0');
-define('PKG_RELEASE', 'beta');
+define('PKG_RELEASE', 'beta3');
 
 define('PKG_SUPPORTS_PHP', '7.4');
 define('PKG_SUPPORTS_MODX', '2.7');
@@ -54,7 +54,7 @@ $sources = [
     ],
 ];
 
-$signature = implode('-', [PKG_NAME, PKG_VERSION, PKG_RELEASE]);
+$signature = implode('-', [PKG_NAME_LOWER, PKG_VERSION, PKG_RELEASE]);
 
 $release = false;
 if (!empty($argv) && $argc > 1) {
@@ -95,9 +95,9 @@ if (empty($username) || empty($key)) {
 }
 
 $params = [
-    'api_key' => $key,
-    'username' => $username,
-    'http_host' => 'anysite.docker',
+    'api_key' => trim($key),
+    'username' => trim($username),
+    'http_host' => 'anysite.local.docker',
     'package' => PKG_NAME,
     'version' => PKG_VERSION . '-' . PKG_RELEASE,
     'vehicle_version' => '2.0.0'
@@ -118,9 +118,10 @@ $answer = ArrayXMLConverter::toArray($result);
 
 if (isset($answer['message'])) {
     $xpdo->log(xPDO::LOG_LEVEL_ERROR, $answer['message']);
-    echo $answer['message'];
     exit;
 }
+
+$xpdo->log(xPDO::LOG_LEVEL_INFO, 'Encryption key is: '. $answer['key']);
 
 define('PKG_ENCODE_KEY', $answer['key']);
 

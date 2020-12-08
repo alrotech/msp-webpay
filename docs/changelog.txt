@@ -1,5 +1,11 @@
 This file shows the changes in recent releases of mspWebPay.
 
+mspWebPay 2.1.0-beta3 (Dec 8, 2020)
+- Fixed issue with condition in encrypter
+
+mspWebPay 2.1.0-beta2 (Dec 8, 2020)
+- Fixed signature of the package to be compatible with encryption engine
+
 mspWebPay 2.1.0-beta (Dec 8, 2020)
 - Belarusian language added
 
