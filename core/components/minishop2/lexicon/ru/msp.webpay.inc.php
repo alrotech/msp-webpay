@@ -17,7 +17,7 @@ $_lang['setting_ms2_payment_webpay_login'] = 'Логин в системе WebPa
 $_lang['setting_ms2_payment_webpay_login_desc'] = 'Логин, с которым вы входите в панель управления WebPay. Нужен для проверки платежа.';
 
 $_lang['setting_ms2_payment_webpay_password'] = 'Пароль в системе WebPay';
-$_lang['setting_ms2_payment_webpay_password_desc'] = 'Логин, с которым вы входите в панель управления WebPay. Нужен для проверки платежа.';
+$_lang['setting_ms2_payment_webpay_password_desc'] = 'Пароль, с которым вы входите в панель управления WebPay. Нужен для проверки платежа.';
 
 $_lang['setting_ms2_payment_webpay_checkout_url'] = 'Адрес для выполнения запросов';
 $_lang['setting_ms2_payment_webpay_checkout_url_desc'] = 'Адрес, куда будет отправляться пользователь для выполнения оплаты заказа.';
