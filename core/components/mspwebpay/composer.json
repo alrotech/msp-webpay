@@ -1,0 +1,16 @@
+{
+    "name": "alroniks/mspwebpay-model",
+    "description": "Model package of mspWebPay component",
+    "type": "metapackage",
+    "require": {
+        "sabre/xml": "^2.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ivan Klimchuk",
+            "email": "ivan@klimchuk.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}

@@ -5,6 +5,8 @@
  * Written by Ivan Klimchuk <ivan@klimchuk.com>, 2019
  */
 
+use Sabre\Xml\Service;
+
 if (!class_exists('ConfigurablePaymentHandler')) {
     $path = MODX_CORE_PATH. 'components/mspaymentprops/ConfigurablePaymentHandler.class.php';
     if (is_readable($path)) {
@@ -12,13 +14,13 @@ if (!class_exists('ConfigurablePaymentHandler')) {
     }
 }
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 /**
  * Class for handling requests to WebPay API
  */
 class WebPay extends ConfigurablePaymentHandler
 {
-    public const PREFIX = 'ms2_payment_';
-
     public const OPTION_STORE_NAME = 'store_name';
     public const OPTION_STORE_ID = 'store_id';
     public const OPTION_SECRET_KEY = 'secret_key';
@@ -40,12 +42,23 @@ class WebPay extends ConfigurablePaymentHandler
     public const OPTION_FAILURE_PAGE = 'failure_page';
     public const OPTION_UNPAID_PAGE = 'unpaid_page';
 
+    /** @var modX */
+    public $modx;
+
+    /**
+     * @return xPDO
+     */
+    protected function getMODX(): xPDO
+    {
+        return $this->modx;
+    }
+
     /**
      * @return string
      */
     public static function getPrefix(): string
     {
-        return self::PREFIX . strtolower(__CLASS__);
+        return 'ms2_payment_' . strtolower(__CLASS__);
     }
 
     /**
@@ -53,7 +66,7 @@ class WebPay extends ConfigurablePaymentHandler
      * @param xPDOObject $object
      * @param array $config
      */
-    function __construct(xPDOObject $object, $config = [])
+    public function __construct(xPDOObject $object, $config = [])
     {
         parent::__construct($object, $config);
 
@@ -62,8 +75,9 @@ class WebPay extends ConfigurablePaymentHandler
 
     /**
      * @param msOrder $order
+     *
      * @return array|string
-     * @throws ReflectionException
+     * @throws ReflectionException|JsonException
      */
     public function send(msOrder $order)
     {
@@ -76,8 +90,10 @@ class WebPay extends ConfigurablePaymentHandler
 
     /**
      * @param msOrder $order
+     *
      * @return string
      * @throws ReflectionException
+     * @throws JsonException
      */
     public function getPaymentLink(msOrder $order)
     {
@@ -89,6 +105,7 @@ class WebPay extends ConfigurablePaymentHandler
 
         /** @var modUser $user */
         $user = $order->getOne('User');
+
         if ($user) {
             /** @var modUserProfile $user */
             $user = $user->getOne('Profile');
@@ -149,7 +166,13 @@ class WebPay extends ConfigurablePaymentHandler
 
         $request['wsb_signature'] = sha1(implode('', $signatureParts));
 
-        return $this->config['return_url'] . '?' . http_build_query(['action' => 'payment', 'order' => $order->get('id'), 'request' => json_encode($request)]);
+        return $this->config['return_url'] . '?' . http_build_query(
+                [
+                    'action' => 'payment',
+                    'wsb_order_num' => $order->get('id'),
+                    'request' => json_encode($request, JSON_THROW_ON_ERROR)
+                ]
+            );
     }
 
     public function adjustCheckoutUrls(): void
@@ -162,11 +185,19 @@ class WebPay extends ConfigurablePaymentHandler
 
     /**
      * @param msOrder $order
-     * @param array $params
+     * @param array   $params
+     *
      * @return array|string|void
+     * @throws JsonException
      */
     public function receive(msOrder $order, $params = [])
     {
+        /** @var msPayment $payment */
+        $payment = $order->getOne('Payment');
+
+        $this->config = $this->getProperties($payment);
+        $this->adjustCheckoutUrls();
+
         switch ($params['action']) {
             case 'success':
                 if (empty($params['wsb_tid'])) {
@@ -174,7 +205,19 @@ class WebPay extends ConfigurablePaymentHandler
                 }
 
                 $transaction_id = $params['wsb_tid'];
-                $postdata = '*API=&API_XML_REQUEST=' . urlencode('<?xml version="1.0" encoding="ISO-8859-1"?><wsb_api_request><command>get_transaction</command><authorization><username>' . $this->config['login'] . '</username><password>' . md5($this->config['password']) . '</password></authorization><fields><transaction_id>' . $transaction_id . '</transaction_id></fields></wsb_api_request>');
+
+                $xml = (new Service)->write('wsb_api_request', [
+                    'command' => 'get_transaction',
+                    'authorization' => [
+                        'username' => $this->config['login'],
+                        'password' => md5($this->config['password'])
+                    ],
+                    'fields' => [
+                        'transaction_id' => $transaction_id
+                    ]
+                ]);
+
+                $postdata = '*API=&API_XML_REQUEST=' . urlencode($xml);
 
                 $curl = curl_init($this->config['gate_url']);
                 curl_setopt($curl, CURLOPT_HEADER, 0);
@@ -190,17 +233,29 @@ class WebPay extends ConfigurablePaymentHandler
                 if ((string)$xml->status === 'success') {
                     $fields = (array)$xml->fields;
 
-                    $crc = md5($fields['transaction_id'] . $fields['batch_timestamp'] . $fields['currency_id'] . $fields['amount'] . $fields['payment_method'] . $fields['payment_type'] . $fields['order_id'] . $fields['rrn'] . $this->config['secret']);
+                    $crc = md5(
+                        $fields['transaction_id'] .
+                        $fields['batch_timestamp'] .
+                        $fields['currency_id'] .
+                        $fields['amount'] .
+                        $fields['payment_method'] .
+                        $fields['payment_type'] .
+                        $fields['order_id'] .
+                        $fields['rrn'] .
+                        $this->config[static::OPTION_SECRET_KEY]
+                    );
 
-                    if ($crc === $fields['wsb_signature'] && in_array($fields['payment_type'], [1, 4], true)) {
+                    if ($crc === $fields['wsb_signature'] && in_array((int) $fields['payment_type'], [1, 4], true)) {
                         $miniShop2 = $this->modx->getService('miniShop2');
                         @$this->modx->context->key = 'mgr';
-                        $miniShop2->changeOrderStatus($order->get('id'), 2);
+                        if (!empty($miniShop2)) {
+                            $miniShop2->changeOrderStatus($order->get('id'), 2);
+                        }
                     } else {
-                        $this->paymentError('Transaction with id ' . $transaction_id . ' is not valid.');
+                        $this->paymentError('Transaction with id ' . $transaction_id . ' is not valid.', array_merge($params, $fields?? [], $this->config));
                     }
                 } else {
-                    $this->paymentError('Could not check transaction with id ' . $transaction_id);
+                    $this->paymentError('Could not check transaction with id ' . $transaction_id, $params);
                 }
                 break;
             case 'notify':
@@ -208,28 +263,39 @@ class WebPay extends ConfigurablePaymentHandler
                 if ($crc === $params['wsb_signature'] && in_array($params['payment_type'], [1, 4], true)) {
                     $miniShop2 = $this->modx->getService('miniShop2');
                     @$this->modx->context->key = 'mgr';
-                    $miniShop2->changeOrderStatus($order->get('id'), 2);
+                    if (!empty($miniShop2)) {
+                        $miniShop2->changeOrderStatus($order->get('id'), 2); // todo: get status from config
+                    }
                     header("HTTP/1.0 200 OK");
                     exit;
-                } else {
-                    $this->paymentError('Transaction with id ' . $params['transaction_id'] . ' is not valid.');
                 }
+
+                $this->paymentError('Transaction with id ' . $params['transaction_id'] . ' is not valid.', $params);
+
                 break;
             case 'cancel':
                 $miniShop2 = $this->modx->getService('miniShop2');
                 @$this->modx->context->key = 'mgr';
-                $miniShop2->changeOrderStatus($order->get('id'), 4);
+                if (!empty($miniShop2)) {
+                    $miniShop2->changeOrderStatus($order->get('id'), 4); // todo: get status from config
+                }
                 break;
         }
     }
 
     /**
-     * @param $text
+     * @param       $text
      * @param array $request
+     *
+     * @throws JsonException
      */
-    public function paymentError($text, $request = [])
+    public function paymentError($text, $request = []): void
     {
-        $this->log(sprintf('%s, request: %s', $text, print_r($request, 1)));
+        if (!empty($request)) {
+            $logMessage = $text . sprintf(', request: %s', json_encode($request, JSON_THROW_ON_ERROR));
+        }
+
+        $this->log($logMessage ?? $text);
 
         header('HTTP/1.0 400 Bad Request');
         die('ERROR: ' . $text);
