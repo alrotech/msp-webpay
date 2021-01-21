@@ -18,15 +18,17 @@ $miniShop2->loadCustomClasses('payment');
 
 if (!class_exists('WebPay')) {
     $msg = '[ms2::payment::webpay] Could not load payment class "WebPay"';
-    $modx->log(modX::LOG_LEVEL_ERROR, $msg); die($msg);
+    $modx->log(modX::LOG_LEVEL_ERROR, $msg);
+    die($msg);
 }
 
-$orderId = (int)$_GET['order'];
+$orderId = (int)$_GET['wsb_order_num'];
 $order = $modx->getObject('msOrder', $orderId);
 
 if (!$order || !$order instanceof msOrder) {
     $msg = '[ms2::payment::webpay] Order not found. Exit.';
-    $modx->log(modX::LOG_LEVEL_ERROR, $msg); die($msg);
+    $modx->log(modX::LOG_LEVEL_ERROR, $msg);
+    die($msg);
 }
 
 $handler = new WebPay($order);
@@ -69,7 +71,9 @@ switch ($_GET['action']) {
         if (empty($_REQUEST['wsb_order_num'])) {
             $modx->log(modX::LOG_LEVEL_ERROR, '[ms2:payment:WebPay] Returned empty order id.');
         }
-        if ($order = $modx->getObject('msOrder', $_REQUEST['wsb_order_num'])) {
+        /** @var msOrder $order */
+        $order = $modx->getObject('msOrder', $_REQUEST['wsb_order_num']);
+        if ($order) {
             $handler->receive($order, $_REQUEST);
         } else {
             $modx->log(modX::LOG_LEVEL_ERROR, '[ms2:payment:WebPay] Could not retrieve order with id ' . $_REQUEST['wsb_order_num']);

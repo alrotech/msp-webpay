@@ -12,10 +12,10 @@ ini_set('date.timezone', 'Europe/Minsk');
 
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
-define('PKG_VERSION', '2.1.0');
-define('PKG_RELEASE', 'beta3');
+define('PKG_VERSION', '2.1.1');
+define('PKG_RELEASE', 'stable');
 
-define('PKG_SUPPORTS_PHP', '7.4');
+define('PKG_SUPPORTS_PHP', '7.2');
 define('PKG_SUPPORTS_MODX', '2.7');
 define('PKG_SUPPORTS_MS2', '2.5');
 
@@ -98,7 +98,7 @@ $params = [
     'api_key' => trim($key),
     'username' => trim($username),
     'http_host' => 'anysite.local.docker',
-    'package' => PKG_NAME,
+    'package' => PKG_NAME_LOWER,
     'version' => PKG_VERSION . '-' . PKG_RELEASE,
     'vehicle_version' => '2.0.0'
 ];
@@ -189,16 +189,12 @@ foreach ($settings as $setting) {
 $category = $xpdo->newObject(modCategory::class);
 $category->fromArray(['id' => 1, 'category' => PKG_NAME, 'parent' => 0]);
 
-//$plugins = include $sources['data'] . 'transport.plugins.php';
-//if (is_array($plugins)) {
-//    $category->addMany($plugins, 'Plugins');
-//}
-
 $validators = [];
 array_push($validators,
     ['type' => 'php', 'source' => $sources['validators'] . 'validate.phpversion.php'],
     ['type' => 'php', 'source' => $sources['validators'] . 'validate.modxversion.php'],
-    ['type' => 'php', 'source' => $sources['validators'] . 'validate.bcmath.php']
+    ['type' => 'php', 'source' => $sources['validators'] . 'validate.bcmath.php'],
+    ['type' => 'php', 'source' => $sources['validators'] . 'validate.oldversion.php'],
 );
 
 $resolvers = [];
@@ -220,6 +216,31 @@ foreach ($sources['core'] as $file) {
 }
 
 $resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php'];
+
+class msPayment extends xPDOObject {}
+
+$payment = new msPayment($xpdo);
+$payment->fromArray([
+    'id' => null,
+    'name' => 'WebPay',
+    'description' => null,
+    'price' => 0,
+    'logo' => null, // todo: add logo to the package
+    'rank' => 0,
+    'active' => 1,
+    'class' => 'WebPay',
+    'properties' => null
+]);
+
+$package->put($payment, [
+    'vehicle_class' => EncryptedVehicle::class,
+    xPDOTransport::UNIQUE_KEY => 'class',
+    xPDOTransport::PRESERVE_KEYS => false,
+    xPDOTransport::UPDATE_OBJECT => false,
+    'resolve' => null,
+    'validate' => null,
+    'package' => 'minishop2'
+]);
 
 $package->put($category, [
     'vehicle_class' => EncryptedVehicle::class,
