@@ -1,5 +1,14 @@
 This file shows the changes in recent releases of mspWebPay.
 
+mspWebPay 2.2.0-stable (Jan 21, 2021)
+- Add sabre/xml library as dependency to handle XML SOAP requests
+- Fix request handler to process proper order identifier
+- Adjust form generator to use common parameter for order identifier
+- Add preinstalled payment method for WebPay
+- Add check for old versions with explanations how to upgrade
+- Fix issues with checking transactions, typos and mistakes in parameters
+- Fix local installation for encrypted package
+
 mspWebPay 2.1.0-beta3 (Dec 8, 2020)
 - Fixed issue with condition in encrypter
 
