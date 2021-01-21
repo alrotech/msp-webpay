@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../../index.php';
 
 $modx->initialize('mgr');
 
-$modx->setLogLevel(xPDO::LOG_LEVEL_ERROR);
+$modx->setLogLevel(xPDO::LOG_LEVEL_INFO);
 $modx->setLogTarget();
 
 $modx->runProcessor('workspace/packages/scanlocal');
