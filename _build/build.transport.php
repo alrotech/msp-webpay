@@ -12,7 +12,7 @@ ini_set('date.timezone', 'Europe/Minsk');
 
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
-define('PKG_VERSION', '2.1.1');
+define('PKG_VERSION', '2.2.0');
 define('PKG_RELEASE', 'stable');
 
 define('PKG_SUPPORTS_PHP', '7.2');
@@ -163,6 +163,7 @@ $namespace->fromArray([
     'id' => PKG_NAME_LOWER,
     'name' => PKG_NAME_LOWER,
     'path' => '{core_path}components/' . PKG_NAME_LOWER . '/',
+    'assets_path' => '{assets_path}components/' . PKG_NAME_LOWER . '/',
 ]);
 
 $package->put($namespace, [
@@ -216,31 +217,7 @@ foreach ($sources['core'] as $file) {
 }
 
 $resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.service.php'];
-
-class msPayment extends xPDOObject {}
-
-$payment = new msPayment($xpdo);
-$payment->fromArray([
-    'id' => null,
-    'name' => 'WebPay',
-    'description' => null,
-    'price' => 0,
-    'logo' => null, // todo: add logo to the package
-    'rank' => 0,
-    'active' => 1,
-    'class' => 'WebPay',
-    'properties' => null
-]);
-
-$package->put($payment, [
-    'vehicle_class' => EncryptedVehicle::class,
-    xPDOTransport::UNIQUE_KEY => 'class',
-    xPDOTransport::PRESERVE_KEYS => false,
-    xPDOTransport::UPDATE_OBJECT => false,
-    'resolve' => null,
-    'validate' => null,
-    'package' => 'minishop2'
-]);
+$resolvers[] = ['type' => 'php', 'source' => $sources['resolvers'] . 'resolve.payment.php'];
 
 $package->put($category, [
     'vehicle_class' => EncryptedVehicle::class,
