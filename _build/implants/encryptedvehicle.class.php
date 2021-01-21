@@ -181,7 +181,7 @@ class EncryptedVehicle extends xPDOObjectVehicle
 
                 include_once __DIR__ . '/ArrayXMLConverter.php';
 
-                $credentials = file_get_contents(sprintf('%s/pkg/%s/.encryption', MODX_CORE_PATH, $package->package_name));
+                $credentials = file_get_contents(sprintf('%spkg/%s/.encryption', MODX_BASE_PATH, $package->package_name));
 
                 $username = $secret = '';
 
