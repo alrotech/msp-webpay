@@ -1,5 +1,8 @@
 This file shows the changes in recent releases of mspWebPay.
 
+mspWebPay 2.2.1-stable (Jan 22, 2021)
+- Require new version of msPaymentProps with fixed handling Yes/No values in payment properties
+
 mspWebPay 2.2.0-stable (Jan 21, 2021)
 - Add sabre/xml library as dependency to handle XML SOAP requests
 - Fix request handler to process proper order identifier

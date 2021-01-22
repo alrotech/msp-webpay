@@ -12,7 +12,7 @@ ini_set('date.timezone', 'Europe/Minsk');
 
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
-define('PKG_VERSION', '2.2.0');
+define('PKG_VERSION', '2.2.1');
 define('PKG_RELEASE', 'stable');
 
 define('PKG_SUPPORTS_PHP', '7.2');
@@ -239,7 +239,7 @@ $package->setAttribute('requires', [
     'php' => '>=' . PKG_SUPPORTS_PHP,
     'modx' => '>=' . PKG_SUPPORTS_MODX,
     'miniShop2' => '>=' . PKG_SUPPORTS_MS2,
-    'msPaymentProps' => '*'
+    'msPaymentProps' => '0.3.3-stable'
 ]);
 
 if ($package->pack()) {
