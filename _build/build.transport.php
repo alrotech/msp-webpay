@@ -12,7 +12,7 @@ ini_set('date.timezone', 'Europe/Minsk');
 
 define('PKG_NAME', 'mspWebPay');
 define('PKG_NAME_LOWER', strtolower(PKG_NAME));
-define('PKG_VERSION', '2.2.1');
+define('PKG_VERSION', '2.2.2');
 define('PKG_RELEASE', 'stable');
 
 define('PKG_SUPPORTS_PHP', '7.2');
