@@ -239,7 +239,7 @@ $package->setAttribute('requires', [
     'php' => '>=' . PKG_SUPPORTS_PHP,
     'modx' => '>=' . PKG_SUPPORTS_MODX,
     'miniShop2' => '>=' . PKG_SUPPORTS_MS2,
-    'msPaymentProps' => '>=0.3.3-stable'
+    'msPaymentProps' => '>=0.3.4-stable'
 ]);
 
 if ($package->pack()) {

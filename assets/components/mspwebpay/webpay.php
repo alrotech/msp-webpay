@@ -35,7 +35,7 @@ $handler = new WebPay($order);
 
 switch ($_GET['action']) {
     case 'payment':
-        $request = json_decode($_REQUEST['request']);
+        $request = json_decode($_REQUEST['request'], true);
 
         $handler->config = $handler->getProperties($order->getOne('Payment'));
         $handler->adjustCheckoutUrls();
