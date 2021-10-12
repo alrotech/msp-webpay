@@ -31,6 +31,9 @@ $_lang['setting_ms2_payment_webpay_version_desc'] = 'Current version = 2.';
 $_lang['setting_ms2_payment_webpay_developer_mode'] = 'Test mode of payments';
 $_lang['setting_ms2_payment_webpay_developer_mode_desc'] = 'If the value "Yes", all requests payments will be send to a WebPay testing environment of payment processing. If you enabled this mode settings checkout_url and gate_url will be ignored.';
 
+$_lang['setting_ms2_payment_webpay_confirmation_mode'] = 'Confirmation mode';
+$_lang['setting_ms2_payment_webpay_confirmation_mode_desc'] = 'It the value "Yes", after order completed user won\'t be send to the payment page. Instead user will follow flow, when order should be confirmed before payment. After confirmation link to the payment page will be send.';
+
 $_lang['setting_ms2_payment_webpay_currency'] = 'The proposed currency of payment';
 $_lang['setting_ms2_payment_webpay_currency_desc'] = 'User can change it while paying. Literal-digit currency code according to ISO4271. Available variants: <strong>BYN</strong>, <strong>USD</strong>, <strong>EUR</strong>, <strong>RUB</strong>. In developer mode available only BYN.';
 

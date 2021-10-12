@@ -33,6 +33,7 @@ class WebPay extends ConfigurablePaymentHandler
     public const OPTION_CURRENCY = 'currency';
 
     public const OPTION_DEVELOPER_MODE = 'developer_mode';
+    public const OPTION_CONFIRMATION_MODE = 'confirmation_mode';
     public const OPTION_CHECKOUT_URL_TEST = 'checkout_url_test';
     public const OPTION_GATE_URL_TEST = 'gate_url_test';
 
@@ -81,6 +82,12 @@ class WebPay extends ConfigurablePaymentHandler
      */
     public function send(msOrder $order)
     {
+        $this->config = $this->getProperties($order->getOne('Payment'));
+
+        if ($this->config[self::OPTION_CONFIRMATION_MODE]) {
+            return parent::send($order);
+        }
+
         if (!$link = $this->getPaymentLink($order)) {
             return $this->error('Token and redirect url can not be requested. Please, look at error log.');
         }
