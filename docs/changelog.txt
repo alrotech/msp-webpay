@@ -1,5 +1,8 @@
 This file shows the changes in recent releases of mspWebPay.
 
+mspWebPay 2.3.0-stable (Oct 12, 2021)
+- Added confirmation mode for ability delay redirect to payment page until confirmation order by the operator
+
 mspWebPay 2.2.2-stable (Jan 22, 2021)
 - Proper dependency definition from msPaymentProps in the package
 

@@ -16,7 +16,7 @@ $modx->setLogTarget();
 
 $modx->runProcessor('workspace/packages/scanlocal');
 $answer = $modx->runProcessor('workspace/packages/install',
-    ['signature' => 'mspWebPay-2.2.2-stable']
+    ['signature' => 'mspWebPay-2.3.0-stable']
 );
 
 $response = $answer->getResponse();
