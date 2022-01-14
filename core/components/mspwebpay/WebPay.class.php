@@ -31,6 +31,7 @@ class WebPay extends ConfigurablePaymentHandler
     public const OPTION_LANGUAGE = 'language';
     public const OPTION_VERSION = 'version';
     public const OPTION_CURRENCY = 'currency';
+    public const OPTION_TAB = 'tab';
 
     public const OPTION_DEVELOPER_MODE = 'developer_mode';
     public const OPTION_CONFIRMATION_MODE = 'confirmation_mode';
@@ -147,7 +148,8 @@ class WebPay extends ConfigurablePaymentHandler
             'wsb_notify_url' => $this->config['return_url'] . '?action=notify',
             'wsb_shipping_name' => $delivery->get('name'),
             'wsb_shipping_price' => $delivery->get('price'),
-            'wsb_email' => $user->get('email')
+            'wsb_email' => $user->get('email'),
+            'wsb_tab' => $this->config[self::OPTION_TAB],
         ];
 
         $products = $this->modx->getCollection(msOrderProduct::class, ['order_id' => $order->get('id')]);
