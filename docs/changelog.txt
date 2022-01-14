@@ -1,5 +1,8 @@
 This file shows the changes in recent releases of mspWebPay.
 
+mspWebPay 2.3.1-stable (Jan 14, 2022)
+- Fix issue with delivery cost, when it always fetched from original delivery, instead of order value.
+
 mspWebPay 2.3.0-stable (Oct 12, 2021)
 - Added confirmation mode for ability delay redirect to payment page until confirmation order by the operator
 
