@@ -146,7 +146,7 @@ class WebPay extends ConfigurablePaymentHandler
             'wsb_cancel_return_url' => $this->config['return_url'] . '?action=cancel',
             'wsb_notify_url' => $this->config['return_url'] . '?action=notify',
             'wsb_shipping_name' => $delivery->get('name'),
-            'wsb_shipping_price' => $delivery->get('price'),
+            'wsb_shipping_price' => $order->get('delivery_cost'),
             'wsb_email' => $user->get('email')
         ];
 
