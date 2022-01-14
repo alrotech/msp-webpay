@@ -9,16 +9,16 @@
     "packages-dev": [
         {
             "name": "modx/revolution",
-            "version": "v2.7.3-pl",
+            "version": "v2.8.1-pl",
             "source": {
                 "type": "git",
                 "url": "https://github.com/modxcms/revolution.git",
-                "reference": "8375249e93dd9a9e8f1979e8f7ba407b79f1b913"
+                "reference": "18f052dd79ae25a5303cc7a6e4cf23b31313ee68"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/modxcms/revolution/zipball/8375249e93dd9a9e8f1979e8f7ba407b79f1b913",
-                "reference": "8375249e93dd9a9e8f1979e8f7ba407b79f1b913",
+                "url": "https://api.github.com/repos/modxcms/revolution/zipball/18f052dd79ae25a5303cc7a6e4cf23b31313ee68",
+                "reference": "18f052dd79ae25a5303cc7a6e4cf23b31313ee68",
                 "shasum": ""
             },
             "require": {
@@ -54,14 +54,23 @@
                 }
             ],
             "description": "MODX Revolution is a Content Management System",
-            "homepage": "http://modx.com/",
+            "homepage": "https://modx.com/",
             "keywords": [
                 "cms",
                 "content",
                 "routing",
                 "templating"
             ],
-            "time": "2020-02-27T18:16:16+00:00"
+            "support": {
+                "chat": "https://modx.org/",
+                "docs": "https://docs.modx.com/",
+                "email": "help@modx.com",
+                "forum": "https://community.modx.com/",
+                "irc": "irc://irc.freenode.org/modx",
+                "issues": "https://github.com/modxcms/revolution/issues/",
+                "source": "https://github.com/modxcms/revolution/"
+            },
+            "time": "2020-10-22T15:51:51+00:00"
         }
     ],
     "aliases": [],
@@ -70,5 +79,6 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": [],
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "2.1.0"
 }
