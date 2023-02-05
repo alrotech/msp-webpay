@@ -29,6 +29,7 @@ $list = [
     WebPay::OPTION_CONFIRMATION_MODE=> ['xtype' => 'combo-boolean',         'value' => false],
     WebPay::OPTION_CHECKOUT_URL_TEST=> ['xtype' => 'textfield',             'value' => 'https://securesandbox.webpay.by'],
     WebPay::OPTION_GATE_URL_TEST    => ['xtype' => 'textfield',             'value' => 'https://sandbox.webpay.by'],
+    WebPay::OPTION_TAB              => ['xtype' => 'textfield',             'value' => ''],
 ];
 
 $settings = [];
